@@ -15,6 +15,7 @@ async function init() {
       CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, verified BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS practice_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, started_at TIMESTAMPTZ, ended_at TIMESTAMPTZ, duration_seconds INTEGER DEFAULT 0, sentences_practiced INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS wrong_sentences (id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, sentence_en TEXT NOT NULL, recorded_at TIMESTAMPTZ DEFAULT NOW());
+      CREATE TABLE IF NOT EXISTS practice_state (user_id TEXT PRIMARY KEY, state JSONB DEFAULT '{}', saved_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS login_logs (id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, time TIMESTAMPTZ DEFAULT NOW());
     `);
     usePg = true;
@@ -29,6 +30,18 @@ function readJson() { try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"
 function writeJson(data) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); }
 
 module.exports = {
+  async savePracticeState(userId, state) {
+    if (usePg) { await pool.query("INSERT INTO practice_state (user_id, state) VALUES ($1,$2) ON CONFLICT (user_id) DO UPDATE SET state=$2, saved_at=NOW()", [userId, JSON.stringify(state)]); return; }
+    const data = readJson(); data.practiceState = data.practiceState || {}; data.practiceState[userId] = state; writeJson(data);
+  },
+  async loadPracticeState(userId) {
+    if (usePg) { const r = await pool.query("SELECT state FROM practice_state WHERE user_id=$1", [userId]); return r.rows[0]?.state || null; }
+    return (readJson().practiceState || {})[userId] || null;
+  },
+  async clearPracticeState(userId) {
+    if (usePg) { await pool.query("DELETE FROM practice_state WHERE user_id=$1", [userId]); return; }
+    const data = readJson(); if (data.practiceState) { delete data.practiceState[userId]; writeJson(data); }
+  },
   init,
   async findUserByEmail(email) {
     if (usePg) { const r = await pool.query("SELECT * FROM users WHERE email = $1", [email]); return r.rows[0] || null; }

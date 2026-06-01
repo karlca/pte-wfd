@@ -33,6 +33,16 @@ export async function getWrongSentences() {
   return res.json();
 }
 
+export async function savePracticeState(state) {
+  const res = await fetch(API + "/practice/state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + getToken() }, body: JSON.stringify(state) });
+  return res.json();
+}
+
+export async function loadPracticeState() {
+  const res = await fetch(API + "/practice/state", { headers: { Authorization: "Bearer " + getToken() } });
+  return res.json();
+}
+
 export async function getStats() {
   const res = await fetch(API + "/practice/stats", { headers: { Authorization: "Bearer " + getToken() } });
   return res.json();

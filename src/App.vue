@@ -57,7 +57,8 @@
           <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
           <button class="btn-cat" :class="{ active: selectedCategory === 'jj' }" @click="selectCategory('jj')">JJ (110)</button>
         </div>
-        <button class="btn-auth" style="margin-top:12px" @click="startWithCategory">Start</button>
+        <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue ({{ savedStateData.currentIndex + 1 }}/{{ savedStateData.sentences.length }})</button>
+        <button class="btn-auth" style="margin-top:12px" @click="startWithCategory">Start New</button>
       </div>
     </div>
 
@@ -170,7 +171,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from "vue";
 import { wfdSentences } from "./data/sentences.js";
-import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences } from "./api.js";
+import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState } from "./api.js";
 
 const sentences = ref([]);
 const currentIndex = ref(0);
@@ -202,6 +203,8 @@ const practiceMode = ref("all");
 const selectedCategory = ref("all"); // "all" | "basic" | "jj"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
+const hasSavedState = ref(false);
+const savedStateData = ref(null);
 const perfectCount = ref(0);
 const showCelebration = ref(false);
 const celebrationText = ref("");
@@ -307,6 +310,7 @@ watch(allFilled, (val) => {
         checkCurrentSentence();
         finishSession();
         currentIndex.value = sentences.value.length;
+        clearState();
       }
     }, 800);
   }
@@ -422,6 +426,7 @@ function nextSentence() {
     userInput.value = {};
     activeSlot.value = null;
     nextTick(() => focusFirstEmpty());
+    saveCurrentState();
     setTimeout(() => playAudio(), 400);
   }
 }
@@ -432,6 +437,7 @@ function prevSentence() {
     userInput.value = {};
     activeSlot.value = null;
     nextTick(() => focusFirstEmpty());
+    saveCurrentState();
     setTimeout(() => playAudio(), 400);
   }
 }
@@ -480,7 +486,54 @@ async function switchMode(mode) {
 
 function fmtTime(s) { if (!s) return "0:00"; const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); }
 
-async function finishSession() {
+async async function saveCurrentState() {
+  if (!loggedIn.value || !started.value || sentences.value.length === 0) return;
+  try {
+    await savePracticeState({
+      sentences: sentences.value.map(s => ({ en: s.en, zh: s.zh, category: s.category })),
+      currentIndex: currentIndex.value,
+      userInput: userInput.value,
+      category: selectedCategory.value,
+      mode: practiceMode.value,
+    });
+  } catch (e) {}
+}
+
+async function clearState() {
+  if (!loggedIn.value) return;
+  try { await savePracticeState({}); } catch (e) {}
+  hasSavedState.value = false;
+  savedStateData.value = null;
+}
+
+async function checkSavedState() {
+  if (!loggedIn.value) return;
+  try {
+    const state = await loadPracticeState();
+    if (state && state.sentences && state.sentences.length > 0 && state.currentIndex < state.sentences.length) {
+      hasSavedState.value = true;
+      savedStateData.value = state;
+    }
+  } catch (e) {}
+}
+
+function resumePractice() {
+  if (!savedStateData.value) return;
+  const state = savedStateData.value;
+  sentences.value = state.sentences;
+  currentIndex.value = state.currentIndex;
+  userInput.value = state.userInput || {};
+  selectedCategory.value = state.category || "all";
+  practiceMode.value = state.mode || "all";
+  started.value = true;
+  hasSavedState.value = false;
+  sessionStart.value = Date.now();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => { elapsedSeconds.value = Math.floor((Date.now() - sessionStart.value) / 1000); }, 1000);
+  nextTick(() => { if (parsedWords.value.length > 0) focusFirstEmpty(); });
+}
+
+function finishSession() {
   if (savingSession.value) return;
   savingSession.value = true;
   if (timerInterval) clearInterval(timerInterval);
@@ -520,6 +573,7 @@ function restart() {
     startPractice(wfdSentences);
   }
   showReference.value = false;
+  clearState();
 }
 
 // Preload best English voice
@@ -564,7 +618,7 @@ async function doVerify() {
     loggedIn.value = true;
     userEmail.value = data.email;
     needsVerify.value = false;
-    // will show category selector
+    checkSavedState();
   } catch (e) {
     authError.value = e.message;
   } finally {
@@ -590,6 +644,7 @@ function doLogout() {
   sentences.value = [];
   started.value = false;
   if (timerInterval) clearInterval(timerInterval);
+  saveCurrentState();
 }
 
 function playAudio() {

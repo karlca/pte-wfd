@@ -56,6 +56,17 @@ app.post("/api/practice/session", auth, async (req, res) => {
 app.get("/api/practice/wrong", auth, async (req, res) => { res.json(await db.getWrongSentences(req.user.id)); });
 app.get("/api/practice/stats", auth, async (req, res) => { res.json(await db.getStats(req.user.id)); });
 
+// Practice state - save/restore progress
+app.post("/api/practice/state", auth, async (req, res) => {
+  await db.savePracticeState(req.user.id, req.body);
+  res.json({ ok: true });
+});
+
+app.get("/api/practice/state", auth, async (req, res) => {
+  const state = await db.loadPracticeState(req.user.id);
+  res.json(state || {});
+});
+
 // Admin
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const adminAuth = (req, res, next) => {
