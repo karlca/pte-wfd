@@ -310,6 +310,7 @@ const filledCount = computed(() => parsedWords.value.filter(w => w.filled).lengt
 const allFilled = computed(() => totalWords.value > 0 && filledCount.value === totalWords.value);
 
 watch(allFilled, (val) => {
+  console.log('[PTE] allFilled:', val, 'filled:', filledCount.value, 'total:', totalWords.value, 'auto:', autoAdvance.value);
   if (val && autoAdvance.value) {
     setTimeout(() => {
       if (currentIndex.value < sentences.value.length - 1) {
