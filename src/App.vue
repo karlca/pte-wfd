@@ -525,7 +525,7 @@ async function checkSavedState(autoResume = false) {
   if (!loggedIn.value) return;
   try {
     const state = await loadPracticeState();
-    if (state && state.sentences && state.sentences.length > 0 && state.currentIndex < state.sentences.length) {
+    if (state && ((state.sentenceIds && state.sentenceIds.length > 0) || (state.sentences && state.sentences.length > 0))) {
       hasSavedState.value = true;
       savedStateData.value = state;
       if (autoResume) resumePractice();
@@ -536,8 +536,19 @@ async function checkSavedState(autoResume = false) {
 function resumePractice() {
   if (!savedStateData.value) return;
   const state = savedStateData.value;
-  sentences.value = state.sentences;
-  currentIndex.value = state.currentIndex;
+  // Restore sentence order by ID
+  if (state.sentenceIds && state.sentenceIds.length > 0) {
+    const lookup = {};
+    wfdSentences.forEach(s => { lookup[s.id] = s; });
+    const restored = state.sentenceIds.map(id => lookup[id]).filter(Boolean);
+    if (restored.length > 0) sentences.value = restored;
+    else sentences.value = state.sentenceIds; // fallback for old format
+  } else if (state.sentences && state.sentences.length > 0) {
+    sentences.value = state.sentences; // old format fallback
+  } else {
+    return;
+  }
+  currentIndex.value = Math.min(state.currentIndex || 0, sentences.value.length - 1);
   userInput.value = state.userInput || {};
   selectedCategory.value = state.category || "all";
   practiceMode.value = state.mode || "all";
