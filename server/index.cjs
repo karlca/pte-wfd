@@ -19,6 +19,7 @@ const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 const smtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 let transporter = null;
+console.log("SMTP_ENV:", JSON.stringify({ HOST: SMTP_HOST, PORT: SMTP_PORT, USER: SMTP_USER, FROM: SMTP_FROM, configured: smtpConfigured }));
 if (smtpConfigured && nodemailer) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
@@ -137,6 +138,19 @@ app.post("/api/admin/login", (req, res) => {
 });
 app.get("/api/admin/users", adminAuth, (req, res) => { res.json(db.listAllUsers()); });
 app.delete("/api/admin/users/:id", adminAuth, (req, res) => { db.deleteUser(req.params.id); res.json({ ok: true }); });
+app.post("/api/admin/smtp-test", adminAuth, async (req, res) => {
+  if (!transporter) return res.json({ ok: false, error: "SMTP not configured" });
+  try {
+    await Promise.race([
+      transporter.sendMail({
+        from: SMTP_FROM, to: req.body.email || SMTP_USER,
+        subject: "SMTP Test", text: "If you receive this, SMTP is working."
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000))
+    ]);
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message, code: e.code }); }
+});
 app.get("/api/admin/users/:id/detail", adminAuth, (req, res) => {
   const detail = db.getUserDetail(req.params.id);
   if (!detail) return res.status(404).json({ error: "User not found" });
