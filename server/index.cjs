@@ -19,7 +19,7 @@ const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 const smtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 let transporter = null;
-if (smtpConfigured) {
+if (smtpConfigured && nodemailer) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
