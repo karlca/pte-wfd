@@ -3,7 +3,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const nodemailer = require("nodemailer");
+let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(e) {}
 const db = require("./db.cjs");
 
 const app = express();
