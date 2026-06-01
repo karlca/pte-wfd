@@ -246,6 +246,7 @@ function startPractice(list) {
   }, 1000);
   nextTick(() => focusFirstEmpty());
   setTimeout(() => playAudio(), 600);
+  saveCurrentState();
 }
 
 onMounted(() => {
@@ -511,7 +512,7 @@ function saveCurrentState() {
       category: selectedCategory.value,
       mode: practiceMode.value,
     });
-  } catch (e) {}
+  } catch (e) { console.error('saveState failed:', e); }
 }
 
 async function clearState() {
@@ -525,7 +526,8 @@ async function checkSavedState(autoResume = false) {
   if (!loggedIn.value) return;
   try {
     const state = await loadPracticeState();
-    if (state && ((state.sentenceIds && state.sentenceIds.length > 0) || (state.sentences && state.sentences.length > 0))) {
+    console.log('Found saved state:', state?.sentenceIds?.length || state?.sentences?.length, 'sentences, index', state?.currentIndex);
+      if (state && ((state.sentenceIds && state.sentenceIds.length > 0) || (state.sentences && state.sentences.length > 0))) {
       hasSavedState.value = true;
       savedStateData.value = state;
       if (autoResume) resumePractice();
@@ -558,6 +560,7 @@ function resumePractice() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => { elapsedSeconds.value = Math.floor((Date.now() - sessionStart.value) / 1000); }, 1000);
   nextTick(() => { if (parsedWords.value.length > 0) focusFirstEmpty(); });
+  setTimeout(() => saveCurrentState(), 300);
 }
 
 async function finishSession() {
