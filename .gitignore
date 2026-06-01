@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.vite/
+server/data.json
+work/
+*.log
