@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="app">
     <header class="header">
       <h1>PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
@@ -92,27 +92,21 @@
 
       <div class="sentence-area">
         <div class="blanks-row" ref="blanksContainer">
-          <template v-for="(word, wi) in parsedWords" :key="wi">
-            <span class="word-group">
-              <span
-                v-for="(ch, ci) in word.chars"
-                :key="ci"
-                class="char-slot"
-                :class="{
-                  filled: ch.filled && ch.isLetter,
-                  active: activeSlot && activeSlot.wi === wi && activeSlot.ci === ci,
-                  correct: ch.filled && ch.isCorrect && ch.isLetter,
-                  incorrect: ch.filled && !ch.isCorrect && ch.isLetter,
-                  punctuation: !ch.isLetter,
-                }"
-                @click="ch.isLetter && focusSlot(wi, ci)"
-              >
-                <template v-if="ch.isLetter">{{ ch.filled ? ch.value : '' }}</template>
-                <template v-else>{{ ch.char }}</template>
-              </span>
-            </span>
+            <span
+              v-for="(w, wi) in parsedWords"
+              :key="wi"
+              class="word-slot"
+              :class="{
+                filled: w.filled,
+                active: activeWordIndex === wi,
+                correct: w.filled && w.isCorrect,
+                incorrect: w.filled && !w.isCorrect,
+              }"
+              :style="{ minWidth: w.width + 'px' }"
+              @click="focusWord(wi)"
+            >{{ w.filled ? w.value : '' }}</span>
             <span class="word-space">&nbsp;</span>
-          </template>
+
         </div>
       </div>
 
@@ -132,7 +126,7 @@
       </div>
 
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: totalChars ? (filledCount / totalChars * 100) + '%' : '0%' }"></div>
+        <div class="progress-fill" :style="{ width: totalWords ? (filledCount / totalChars * 100) + '%' : '0%' }"></div>
       </div>
 
       <div class="mode-bar">
@@ -182,6 +176,7 @@ const sentences = ref([]);
 const currentIndex = ref(0);
 const userInput = ref({});
 const activeSlot = ref(null);
+const activeWordIndex = ref(-1);
 const showReference = ref(false);
 const isPlaying = ref(false);
 const selectedVoiceName = ref(localStorage.getItem("pte_voice") || "");
@@ -288,35 +283,27 @@ const completionMessage = computed(() => {
 
 const parsedWords = computed(() => {
   if (!currentText.value) return [];
-  const words = currentText.value.split(/\s+/).filter(w => w.length > 0);
-  return words.map((word, wi) => ({
-    word,
-    wi,
-    chars: word.split("").map((ch, ci) => {
-      const key = wi + "-" + ci;
-      const isLetter = /[a-zA-Z]/.test(ch);
-      const userVal = userInput.value[key];
-      return {
-        char: ch,
-        key,
-        isLetter,
-        filled: userVal !== undefined && userVal !== "",
-        value: userVal !== undefined && userVal !== "" ? userVal : "",
-        isCorrect: userVal && userVal.toLowerCase() === ch.toLowerCase(),
-      };
-    }),
-  }));
+  return currentText.value.split(/\s+/).filter(w => w.length > 0).map((word, wi) => {
+    const key = String(wi);
+    const userVal = userInput.value[key] || "";
+    const cleanWord = word.replace(/[^a-zA-Z]/g, "");
+    const cleanVal = userVal.replace(/[^a-zA-Z]/g, "");
+    return {
+      word: cleanWord, display: word, key,
+      filled: userVal !== "", value: userVal,
+      isCorrect: cleanVal.toLowerCase() === cleanWord.toLowerCase(),
+      width: cleanWord.length * 17 + 10,
+    };
+  });
 });
 
-const totalChars = computed(() =>
+const totalWords = computed(() =>
   parsedWords.value.reduce((sum, w) => sum + w.chars.filter(c => c.isLetter).length, 0)
 );
 
-const filledCount = computed(() =>
-  parsedWords.value.reduce((sum, w) => sum + w.chars.filter(c => c.isLetter && c.filled).length, 0)
-);
+const filledCount = computed(() => parsedWords.value.filter(w => w.filled).length);
 
-const allFilled = computed(() => totalChars.value > 0 && filledCount.value === totalChars.value);
+const allFilled = computed(() => totalWords.value > 0 && filledCount.value === totalWords.value);
 
 watch(allFilled, (val) => {
   if (val && autoAdvance.value) {
@@ -333,98 +320,68 @@ watch(allFilled, (val) => {
   }
 });
 
-function focusSlot(wi, ci) {
-  const word = parsedWords.value[wi];
-  if (!word) return;
-  const ch = word.chars[ci];
-  if (!ch || !ch.isLetter) return;
-  activeSlot.value = { wi, ci };
+function focusSlot(wi, ci) { focusWord(wi); }
+function focusWord(wi) {
+  if (wi < 0 || wi >= parsedWords.value.length) return;
+  activeWordIndex.value = wi;
   nextTick(() => hiddenInput.value?.focus());
 }
 
 function focusFirstEmpty() {
-  for (const word of parsedWords.value) {
-    for (const ch of word.chars) {
-      if (ch.isLetter && !ch.filled) { focusSlot(word.wi, word.chars.indexOf(ch)); return; }
-    }
+  for (let i = 0; i < parsedWords.value.length; i++) {
+    if (!parsedWords.value[i].filled) { focusWord(i); return; }
   }
-  const lastWord = parsedWords.value[parsedWords.value.length - 1];
-  if (lastWord) focusSlot(lastWord.wi, lastWord.chars.length - 1);
+  if (parsedWords.value.length > 0) focusWord(0);
 }
 
 function onInput(e) {
-  if (!activeSlot.value) return;
+  if (activeWordIndex.value < 0) { hiddenInput.value.value = ""; return; }
   const val = e.target.value;
   if (!val) return;
-  const char = val.slice(-1);
-  if (!/^[a-zA-Z]$/.test(char)) { hiddenInput.value.value = ""; return; }
-  const { wi, ci } = activeSlot.value;
-  userInput.value = { ...userInput.value, [wi + "-" + ci]: char }; playKeySound();
+  const cleaned = val.replace(/[^a-zA-Z]/g, "");
+  if (!cleaned) { hiddenInput.value.value = ""; return; }
+  const key = String(activeWordIndex.value);
+  const newVal = (userInput.value[key] || "") + cleaned;
+  userInput.value = { ...userInput.value, [key]: newVal };
+  playKeySound();
   hiddenInput.value.value = "";
-  moveToNextEmpty(wi, ci);
+  const wordLen = parsedWords.value[activeWordIndex.value]?.word.length || 5;
+  if (newVal.length >= wordLen) moveToNextEmpty(activeWordIndex.value);
 }
 
 function onKeydown(e) {
   if (e.key === "Backspace") {
     e.preventDefault();
-    if (!activeSlot.value) return;
-    const { wi, ci } = activeSlot.value;
-    const key = wi + "-" + ci;
-    if (userInput.value[key]) {
-      userInput.value = { ...userInput.value, [key]: "" };
-    } else {
-      const prev = findPrevSlot(wi, ci);
-      if (prev) {
-        userInput.value = { ...userInput.value, [prev.wi + "-" + prev.ci]: "" };
-        focusSlot(prev.wi, prev.ci);
-      }
+    if (activeWordIndex.value < 0) return;
+    const key = String(activeWordIndex.value);
+    const cur = userInput.value[key] || "";
+    if (cur.length > 0) {
+      userInput.value = { ...userInput.value, [key]: cur.slice(0, -1) };
+    } else if (activeWordIndex.value > 0) {
+      focusWord(activeWordIndex.value - 1);
     }
     return;
   }
-  if (e.key === "ArrowLeft") { e.preventDefault(); if (activeSlot.value) { const p = findPrevSlot(activeSlot.value.wi, activeSlot.value.ci); if (p) focusSlot(p.wi, p.ci); } return; }
-  if (e.key === "ArrowRight") { e.preventDefault(); if (activeSlot.value) { const n = findNextSlot(activeSlot.value.wi, activeSlot.value.ci); if (n) focusSlot(n.wi, n.ci); } return; }
+  if (e.key === "ArrowLeft") { e.preventDefault(); if (activeWordIndex.value > 0) focusWord(activeWordIndex.value - 1); return; }
+  if (e.key === "ArrowRight") { e.preventDefault(); if (activeWordIndex.value < parsedWords.value.length - 1) focusWord(activeWordIndex.value + 1); return; }
   if (e.key === " ") {
     e.preventDefault();
-    if (allFilled.value && currentIndex.value < sentences.value.length - 1) {
-      nextSentence();
-    }
+    moveToNextEmpty(activeWordIndex.value);
     return;
   }
   if (/^[a-zA-Z]$/.test(e.key)) {
     e.preventDefault();
-    if (!activeSlot.value) return;
-    const { wi, ci } = activeSlot.value;
-    userInput.value = { ...userInput.value, [wi + "-" + ci]: e.key }; playKeySound();
-    moveToNextEmpty(wi, ci);
+    if (activeWordIndex.value < 0) return;
+    const key = String(activeWordIndex.value);
+    const newVal = (userInput.value[key] || "") + e.key;
+    userInput.value = { ...userInput.value, [key]: newVal }; playKeySound();
+    const wordLen = parsedWords.value[activeWordIndex.value]?.word.length || 5;
+    if (newVal.length >= wordLen) setTimeout(() => moveToNextEmpty(activeWordIndex.value), 50);
   }
 }
 
-function moveToNextEmpty(wi, ci) {
-  const next = findNextSlot(wi, ci);
-  if (next) focusSlot(next.wi, next.ci);
-  else focusSlot(wi, ci);
-}
-
-function findNextSlot(wi, ci) {
-  const words = parsedWords.value;
-  for (let w = wi; w < words.length; w++) {
-    const start = w === wi ? ci + 1 : 0;
-    for (let c = start; c < words[w].chars.length; c++) {
-      if (words[w].chars[c].isLetter) return { wi: w, ci: c };
-    }
-  }
-  return null;
-}
-
-function findPrevSlot(wi, ci) {
-  const words = parsedWords.value;
-  for (let w = wi; w >= 0; w--) {
-    const end = w === wi ? ci - 1 : words[w].chars.length - 1;
-    for (let c = end; c >= 0; c--) {
-      if (words[w].chars[c].isLetter) return { wi: w, ci: c };
-    }
-  }
-  return null;
+function moveToNextEmpty(wi) {
+  if (wi < parsedWords.value.length - 1) focusWord(wi + 1);
 }
 
 function refocus() { nextTick(() => hiddenInput.value?.focus()); }
@@ -755,6 +712,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .blanks-row { display: flex; flex-wrap: wrap; align-items: flex-end; line-height: 2.2; }
 .word-group { display: inline-flex; font-size: 26px; gap: 4px; }
 .word-space { width: 20px; display: inline-block; font-size: 26px; }
+.word-slot { display: inline-flex; align-items: center; justify-content: center; height: 46px; font-size: 22px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 1.5px solid #bbb; padding: 0 10px; margin: 0 3px; min-width: 40px; }
+.word-slot.filled { border-bottom: 1.5px solid #2d6a4f; color: #1a1a2e; }
+.word-slot.correct { color: #2d6a4f; }
+.word-slot.incorrect { color: #d32f2f; border-bottom: 1.5px solid #d32f2f; }
+.word-slot.active { border-bottom: 1.5px solid #1a73e8; color: #1a73e8; box-shadow: 0 1px 0 #1a73e8; }
 .char-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 46px; font-size: 26px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 1.5px solid #bbb; }
 .char-slot.punctuation { border-bottom: none; min-width: auto; width: auto; cursor: default; color: #555; padding: 0 1px; }
 .char-slot.filled { border-bottom: 1.5px solid #2d6a4f; color: #1a1a2e; }
