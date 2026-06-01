@@ -22,39 +22,39 @@ function auth(req, res, next) {
 }
 
 // Register: no email verification, direct login
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password || password.length < 4) return res.status(400).json({ error: "Invalid input" });
-  if (db.findUserByEmail(email)) return res.status(409).json({ error: "Email already registered" });
+  if (await db.findUserByEmail(email)) return res.status(409).json({ error: "Email already registered" });
   const id = uuidv4();
   const hash = bcrypt.hashSync(password, 10);
-  db.createUser({ id, email, password: hash, verified: true, created_at: new Date().toISOString() });
+  await db.createUser({ id, email, password: hash, verified: true, created_at: new Date().toISOString() });
   const token = jwt.sign({ id, email }, JWT_SECRET, { expiresIn: "30d" });
   res.json({ token, email });
 });
 
 // Login
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: "Invalid input" });
-  const user = db.findUserByEmail(email);
+  const user = await db.findUserByEmail(email);
   if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: "Invalid credentials" });
   const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "30d" });
-  db.recordLogin(user.id);
+  await db.recordLogin(user.id);
   res.json({ token, email: user.email });
 });
 
 // Practice
-app.post("/api/practice/session", auth, (req, res) => {
+app.post("/api/practice/session", auth, async (req, res) => {
   const { durationSeconds, sentencesPracticed, wrongSentences } = req.body;
   const sessionId = uuidv4();
-  db.saveSession({ id: sessionId, user_id: req.user.id, duration_seconds: durationSeconds, sentences_practiced: sentencesPracticed, started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(), ended_at: new Date().toISOString() });
-  if (wrongSentences?.length) db.saveWrongSentences(req.user.id, wrongSentences);
+  await db.saveSession({ id: sessionId, user_id: req.user.id, duration_seconds: durationSeconds, sentences_practiced: sentencesPracticed, started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(), ended_at: new Date().toISOString() });
+  if (wrongSentences?.length) await db.saveWrongSentences(req.user.id, wrongSentences);
   res.json({ ok: true, sessionId });
 });
 
-app.get("/api/practice/wrong", auth, (req, res) => { res.json(db.getWrongSentences(req.user.id)); });
-app.get("/api/practice/stats", auth, (req, res) => { res.json(db.getStats(req.user.id)); });
+app.get("/api/practice/wrong", auth, async (req, res) => { res.json(await db.getWrongSentences(req.user.id)); });
+app.get("/api/practice/stats", auth, async (req, res) => { res.json(await db.getStats(req.user.id)); });
 
 // Admin
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
@@ -68,13 +68,13 @@ app.post("/api/admin/login", (req, res) => {
   if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Invalid password" });
   res.json({ token: jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "12h" }) });
 });
-app.get("/api/admin/users", adminAuth, (req, res) => { res.json(db.listAllUsers()); });
-app.get("/api/admin/users/:id/detail", adminAuth, (req, res) => {
-  const detail = db.getUserDetail(req.params.id);
+app.get("/api/admin/users", adminAuth, async (req, res) => { res.json(await db.listAllUsers()); });
+app.get("/api/admin/users/:id/detail", adminAuth, async (req, res) => {
+  const detail = await db.getUserDetail(req.params.id);
   if (!detail) return res.status(404).json({ error: "User not found" });
   res.json(detail);
 });
-app.delete("/api/admin/users/:id", adminAuth, (req, res) => { db.deleteUser(req.params.id); res.json({ ok: true }); });
+app.delete("/api/admin/users/:id", adminAuth, async (req, res) => { await db.deleteUser(req.params.id); res.json({ ok: true }); });
 
 // Serve static frontend in production
 const fs = require("fs");
@@ -90,4 +90,6 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
+db.init().then(() => {
+  app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
+});
