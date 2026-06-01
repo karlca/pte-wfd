@@ -486,10 +486,10 @@ async function switchMode(mode) {
 
 function fmtTime(s) { if (!s) return "0:00"; const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); }
 
-async async function saveCurrentState() {
+function saveCurrentState() {
   if (!loggedIn.value || !started.value || sentences.value.length === 0) return;
   try {
-    await savePracticeState({
+    savePracticeState({
       sentences: sentences.value.map(s => ({ en: s.en, zh: s.zh, category: s.category })),
       currentIndex: currentIndex.value,
       userInput: userInput.value,
@@ -533,7 +533,7 @@ function resumePractice() {
   nextTick(() => { if (parsedWords.value.length > 0) focusFirstEmpty(); });
 }
 
-function finishSession() {
+async function finishSession() {
   if (savingSession.value) return;
   savingSession.value = true;
   if (timerInterval) clearInterval(timerInterval);
