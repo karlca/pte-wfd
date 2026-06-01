@@ -25,6 +25,9 @@ if (smtpConfigured && nodemailer) {
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 8000,
   });
   console.log("SMTP configured for:", SMTP_HOST);
 } else {
@@ -59,13 +62,16 @@ app.post("/api/auth/register", async (req, res) => {
   let emailSent = false;
   if (transporter) {
     try {
-      await transporter.sendMail({
-        from: SMTP_FROM,
-        to: email,
-        subject: "PTE WFD Practice - Verification Code",
-        text: `Your verification code is: ${code}\n\nThis code expires in 10 minutes.`,
-        html: `<p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
-      });
+      await Promise.race([
+        transporter.sendMail({
+          from: SMTP_FROM,
+          to: email,
+          subject: "PTE WFD Practice - Verification Code",
+          text: `Your verification code is: ${code}\n\nThis code expires in 10 minutes.`,
+          html: `<p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 10000))
+      ]);
       emailSent = true;
     } catch (e) {
       console.error("Failed to send email:", e.message);
