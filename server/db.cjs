@@ -35,7 +35,7 @@ module.exports = {
     const data = readJson(); data.practiceState = data.practiceState || {}; data.practiceState[userId] = state; writeJson(data);
   },
   async loadPracticeState(userId) {
-    if (usePg) { const r = await pool.query("SELECT state FROM practice_state WHERE user_id=$1", [userId]); return r.rows[0]?.state || null; }
+    if (usePg) { const r = await pool.query("SELECT state FROM practice_state WHERE user_id=$1", [userId]); const raw = r.rows[0]?.state; return raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null; }
     return (readJson().practiceState || {})[userId] || null;
   },
   async clearPracticeState(userId) {
@@ -77,7 +77,7 @@ module.exports = {
   },
   async listAllUsers() {
     if (usePg) { const r = await pool.query("SELECT u.*, COALESCE(s.sessions,0) as total_sessions, COALESCE(s.total_time,0) as total_time_seconds, COALESCE(w.wrong_count,0) as wrong_count, COALESCE(l.login_count,0) as login_count FROM users u LEFT JOIN (SELECT user_id, COUNT(*) as sessions, COALESCE(SUM(duration_seconds),0) as total_time FROM practice_sessions GROUP BY user_id) s ON u.id=s.user_id LEFT JOIN (SELECT user_id, COUNT(DISTINCT sentence_en) as wrong_count FROM wrong_sentences GROUP BY user_id) w ON u.id=w.user_id LEFT JOIN (SELECT user_id, COUNT(*) as login_count FROM login_logs GROUP BY user_id) l ON u.id=l.user_id ORDER BY u.created_at DESC"); const states = await pool.query("SELECT user_id, state FROM practice_state");
-    const stateMap = {}; states.rows.forEach(s => { try { stateMap[s.user_id] = s.state; } catch(e) {} });
+    const stateMap = {}; states.rows.forEach(s => { try { const v = s.state; stateMap[s.user_id] = typeof v === "string" ? JSON.parse(v) : v; } catch(e) {} });
     return r.rows.map(u => ({ id: u.id, email: u.email, verified: u.verified, created_at: u.created_at, totalSessions: parseInt(u.total_sessions), totalTimeSeconds: parseInt(u.total_time_seconds), wrongCount: parseInt(u.wrong_count), loginCount: parseInt(u.login_count), progress: stateMap[u.id] || null })); }
     const data = readJson(); return data.users.map(u => { const ss = data.sessions.filter(s => s.user_id === u.id); const ws = data.wrongSentences.filter(w => w.user_id === u.id); const ls = (data.loginLogs || []).filter(l => l.user_id === u.id); return { id: u.id, email: u.email, verified: !!u.verified, created_at: u.created_at, totalSessions: ss.length, totalTimeSeconds: ss.reduce((sum, s) => sum + (s.duration_seconds || 0), 0), wrongCount: new Set(ws.map(w => w.sentence_en)).size, loginCount: ls.length }; }).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
   },
