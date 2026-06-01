@@ -371,6 +371,10 @@ function onKeydown(e) {
   if (e.key === "ArrowRight") { e.preventDefault(); if (activeWordIndex.value < parsedWords.value.length - 1) focusWord(activeWordIndex.value + 1); return; }
   if (e.key === " ") {
     e.preventDefault();
+    if (allFilled.value) {
+      if (currentIndex.value < sentences.value.length - 1) nextSentence();
+      return;
+    }
     moveToNextEmpty(activeWordIndex.value);
     return;
   }
