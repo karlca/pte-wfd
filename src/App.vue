@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>PTE WFD 练习</h1>
+      <h1>PTE WFD 缁冧範</h1>
       <span class="user-info">
         <span class="user-email">{{ userEmail }}</span>
         <button class="btn-logout" @click="doLogout" title="Logout">&times;</button>
@@ -74,10 +74,10 @@
 
     <div class="main" v-if="started && currentSentence">
       <div class="audio-bar">
-        <button class="btn-audio" @click="playAudio" :disabled="isPlaying" title="播放语音">
-          <span v-if="isPlaying">▶▶</span>
-          <span v-else>▶</span>
-          播放
+        <button class="btn-audio" @click="playAudio" :disabled="isPlaying" title="鎾斁璇煶">
+          <span v-if="isPlaying">鈻垛柖</span>
+          <span v-else>鈻?/span>
+          鎾斁
         </button>
         <div class="audio-progress" v-if="isPlaying">
           <div class="progress-track"></div>
@@ -115,7 +115,7 @@
 
       <div class="reference-section">
         <button class="btn-reference" @click="showReference = !showReference">
-          {{ showReference ? '隐藏' : '显示' }}完整句子
+          {{ showReference ? '闅愯棌' : '鏄剧ず' }}瀹屾暣鍙ュ瓙
         </button>
         <transition name="fade">
           <div v-if="showReference" class="reference-section-detail">
@@ -139,19 +139,19 @@
       <div class="nav-buttons">
         <label class="auto-toggle">
           <input type="checkbox" v-model="autoAdvance" />
-          <span class="toggle-label">自动下一句</span>
+          <span class="toggle-label">鑷姩涓嬩竴鍙?/span>
         </label>
-        <button class="btn-nav" @click="prevSentence" :disabled="currentIndex === 0">← 上一句</button>
-        <button class="btn-nav" @click="resetCurrent">重置</button>
+        <button class="btn-nav" @click="prevSentence" :disabled="currentIndex === 0">鈫?涓婁竴鍙?/button>
+        <button class="btn-nav" @click="resetCurrent">閲嶇疆</button>
         <button class="btn-nav" @click="nextSentence"
-          :disabled="currentIndex >= sentences.length - 1 && !allFilled">下一句 →</button>
+          :disabled="currentIndex >= sentences.length - 1 && !allFilled">涓嬩竴鍙?鈫?/button>
       </div>
     </div>
 
         <div v-if="started && !currentSentence" class="completion">
       <div v-if="savingSession" style="font-size:14px;color:#666;margin-bottom:12px;">Saving...</div>
-      <div class="completion-icon">🎉</div>
-      <h2>练习完成!</h2>
+      <div class="completion-icon">馃帀</div>
+      <h2>缁冧範瀹屾垚!</h2>
       <div class="session-stats">
         <div class="stat-item"><span class="stat-num">{{ sentences.length }}</span><span class="stat-label">Sentences</span></div>
         <div class="stat-item"><span class="stat-num">{{ perfectCount }}</span><span class="stat-label">Perfect</span></div>
@@ -161,7 +161,7 @@
       <p class="encourage-text">{{ completionMessage }}</p>
       <div class="comp-buttons">
         <button class="btn-nav btn-share" @click="shareResults">Share</button>
-        <button class="btn-nav" @click="restart">再来一次</button>
+        <button class="btn-nav" @click="restart">鍐嶆潵涓€娆?/button>
       </div>
     </div>
   </div>
@@ -260,10 +260,10 @@ const currentTranslation = computed(() => currentSentence.value?.zh ?? "");
 const completionMessage = computed(() => {
   const total = sentences.value.length;
   const perfect = perfectCount.value;
-  if (perfect === total) return "全部正确，太厉害了！";
-  if (perfect >= total * 0.8) return "非常出色，继续保持！";
-  if (perfect >= total * 0.5) return "做得不错，再来一次会更好！";
-  return "每次练习都在进步，坚持下去！";
+  if (perfect === total) return "鍏ㄩ儴姝ｇ‘锛屽お鍘夊浜嗭紒";
+  if (perfect >= total * 0.8) return "闈炲父鍑鸿壊锛岀户缁繚鎸侊紒";
+  if (perfect >= total * 0.5) return "鍋氬緱涓嶉敊锛屽啀鏉ヤ竴娆′細鏇村ソ锛?;
+  return "姣忔缁冧範閮藉湪杩涙锛屽潥鎸佷笅鍘伙紒";
 });
 
 const parsedWords = computed(() => {
@@ -498,7 +498,7 @@ async function finishSession() {
 function resetCurrent() { userInput.value = {}; activeSlot.value = null; nextTick(() => focusFirstEmpty()); }
 
 function shareResults() {
-  const text = `PTE WFD Practice Summary\n✔ ${sentences.value.length} sentences\n⭐ ${perfectCount.value} perfect\n⏱ ${formatTime(elapsedSeconds.value)}\n\nKeep practicing!`;
+  const text = `PTE WFD Practice Summary\n鉁?${sentences.value.length} sentences\n猸?${perfectCount.value} perfect\n鈴?${formatTime(elapsedSeconds.value)}\n\nKeep practicing!`;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => {
       encouragementMsg.value = "Copied!";
@@ -657,12 +657,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .blanks-row { display: flex; flex-wrap: wrap; align-items: flex-end; line-height: 2.2; }
 .word-group { display: inline-flex; font-size: 26px; gap: 4px; }
 .word-space { width: 20px; display: inline-block; font-size: 26px; }
-.char-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 46px; font-size: 26px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 3px solid #ccc; }
+.char-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 46px; font-size: 26px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 1.5px solid #bbb; }
 .char-slot.punctuation { border-bottom: none; min-width: auto; width: auto; cursor: default; color: #555; padding: 0 1px; }
-.char-slot.filled { border-bottom: 3px solid #2d6a4f; color: #1a1a2e; }
+.char-slot.filled { border-bottom: 1.5px solid #2d6a4f; color: #1a1a2e; }
 .char-slot.correct { color: #2d6a4f; }
-.char-slot.incorrect { color: #d32f2f; border-bottom: 3px solid #d32f2f; }
-.char-slot.active { border-bottom: 3px solid #1a73e8; color: #1a73e8; }
+.char-slot.incorrect { color: #d32f2f; border-bottom: 1.5px solid #d32f2f; }
+.char-slot.active { border-bottom: 1.5px solid #1a73e8; color: #1a73e8; }
 .hidden-input { position: fixed; left: -9999px; top: -9999px; opacity: 0; width: 0; height: 0; }
 .reference-section { margin-bottom: 12px; }
 .btn-reference { padding: 8px 16px; background: transparent; color: #1a73e8; border: 1px solid #1a73e8; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
