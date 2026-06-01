@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>PTE WFD 练习</h1>
+      <h1>PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
       <select v-if="availableVoices.length > 0" v-model="selectedVoiceName" @change="onVoiceChange" class="voice-select">
           <option value="">Auto</option>
           <option v-for="v in availableVoices" :key="v.name" :value="v.name">{{ v.name }}</option>
