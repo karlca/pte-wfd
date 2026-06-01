@@ -179,6 +179,8 @@ const userInput = ref({});
 const activeSlot = ref(null);
 const showReference = ref(false);
 const isPlaying = ref(false);
+const selectedVoiceName = ref(localStorage.getItem("pte_voice") || "");
+const availableVoices = ref([]);
 const autoAdvance = ref(true);
 const started = ref(false);
 const loggedIn = ref(isLoggedIn());
@@ -247,7 +249,16 @@ onMounted(() => {
     startPractice(wfdSentences);
   }
   speechSynthesis.getVoices();
-  speechSynthesis.onvoiceschanged = () => { getBestVoice(); };
+  speechSynthesis.onvoiceschanged = () => {
+    const voices = speechSynthesis.getVoices();
+    availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
+    getBestVoice();
+  };
+  // Also load immediately in case voices are already available
+  const voices = speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
+  }
 });
 
 function shuffleArray(arr) {
@@ -647,6 +658,10 @@ function doLogout() {
   saveCurrentState();
 }
 
+function onVoiceChange() {
+  localStorage.setItem("pte_voice", selectedVoiceName.value);
+}
+
 function playAudio() {
   if (!currentText.value || isPlaying.value) return;
   speechSynthesis.cancel();
@@ -660,7 +675,13 @@ function playAudio() {
     return;
   }
 
-  const voice = getBestVoice();
+  let voice;
+  if (selectedVoiceName.value) {
+    const voices = speechSynthesis.getVoices();
+    voice = voices.find(v => v.name === selectedVoiceName.value) || getBestVoice();
+  } else {
+    voice = getBestVoice();
+  }
   isPlaying.value = true;
 
   const u = new SpeechSynthesisUtterance(currentText.value);
@@ -781,6 +802,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .btn-mode { padding: 6px 12px; border: 1px solid #d0d0d0; border-radius: 6px; background: #fff; font-size: 12px; cursor: pointer; color: #666; }
 .btn-mode.active { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
 .btn-mode:disabled { opacity: 0.4; cursor: not-allowed; }
+.voice-select { padding: 4px 8px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 12px; color: #666; background: #fff; max-width: 140px; outline: none; }
+.voice-select:focus { border-color: #2d6a4f; }
 .timer-display { margin-left: auto; font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
 .celebration-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .celebration-text { font-size: 48px; font-weight: 800; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popIn 0.4s ease-out; }
