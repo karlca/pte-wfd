@@ -521,13 +521,14 @@ async function clearState() {
   savedStateData.value = null;
 }
 
-async function checkSavedState() {
+async function checkSavedState(autoResume = false) {
   if (!loggedIn.value) return;
   try {
     const state = await loadPracticeState();
     if (state && state.sentences && state.sentences.length > 0 && state.currentIndex < state.sentences.length) {
       hasSavedState.value = true;
       savedStateData.value = state;
+      if (autoResume) resumePractice();
     }
   } catch (e) {}
 }
