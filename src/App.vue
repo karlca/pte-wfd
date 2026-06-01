@@ -305,7 +305,7 @@ const totalWords = computed(() =>
   parsedWords.value.reduce((sum, w) => sum + w.chars.filter(c => c.isLetter).length, 0)
 );
 
-const filledCount = computed(() => parsedWords.value.filter(w => w.filled).length);
+const filledCount = computed(() => (parsedWords.value || []).filter(w => w.filled).length);
 
 const allFilled = computed(() => totalWords.value > 0 && filledCount.value === totalWords.value);
 
