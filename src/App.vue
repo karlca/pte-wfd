@@ -302,7 +302,7 @@ const parsedWords = computed(() => {
 });
 
 const totalWords = computed(() =>
-  parsedWords.value.reduce((sum, w) => sum + w.chars.filter(c => c.isLetter).length, 0)
+  parsedWords.value.length
 );
 
 const filledCount = computed(() => (parsedWords.value || []).filter(w => w.filled).length);
