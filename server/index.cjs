@@ -29,7 +29,8 @@ if (smtpConfigured && nodemailer) {
     greetingTimeout: 8000,
     socketTimeout: 8000,
   });
-  console.log("SMTP configured for:", SMTP_HOST);
+  transporter.verify(function(err) { if (err) console.error("SMTP verify failed:", err.message); else console.log("SMTP connection OK"); });
+  console.log("SMTP configured for:", SMTP_HOST, "port:", SMTP_PORT, "user:", SMTP_USER);
 } else {
   console.log("SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars to enable real email sending.");
 }
