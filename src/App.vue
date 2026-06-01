@@ -293,7 +293,7 @@ const parsedWords = computed(() => {
     const cleanVal = userVal.replace(/[^a-zA-Z-]/g, "").replace(/^-+|-+$/g, "");
     result.push({
       word: cleanWord, display: rawWord, key,
-      filled: userVal !== "", value: userVal,
+      filled: cleanVal.length >= cleanWord.length, value: userVal,
       isCorrect: cleanVal.toLowerCase() === cleanWord.toLowerCase(),
       width: cleanWord.length * 17 + 10,
     });
