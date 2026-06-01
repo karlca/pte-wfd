@@ -634,7 +634,7 @@ async function doVerify() {
     loggedIn.value = true;
     userEmail.value = data.email;
     needsVerify.value = false;
-    checkSavedState();
+    checkSavedState(true);
   } catch (e) {
     authError.value = e.message;
   } finally {
