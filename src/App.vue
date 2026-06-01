@@ -170,7 +170,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from "vue";
 import { wfdSentences } from "./data/sentences.js";
-import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, verifyEmail, resendVerificationCode, savePracticeSession, getWrongSentences } from "./api.js";
+import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences } from "./api.js";
 
 const sentences = ref([]);
 const currentIndex = ref(0);
@@ -546,27 +546,10 @@ function getBestVoice() {
 async function doLogin() {
   authError.value = ""; authLoading.value = true;
   try {
-    if (authMode.value === "register") {
-      const data = await register(authEmail.value, authPassword.value);
-      if (data.ok) {
-        needsVerify.value = true;
-        verifyEmailRef.value = authEmail.value;
-        verifyEmailSent.value = data.emailSent || false;
-        verifyDevCode.value = data.code || "";
-        verifyMessage.value = data.message || "Verification code sent";
-      }
-    } else {
-      const data = await login(authEmail.value, authPassword.value);
-      if (data.needsVerification) {
-        needsVerify.value = true;
-        verifyEmailRef.value = authEmail.value;
-        verifyMessage.value = "Please verify your email first. Check your inbox.";
-      } else {
-        loggedIn.value = true;
-        userEmail.value = data.email;
-        // will show category selector
-      }
-    }
+    const fn = authMode.value === "register" ? register : login;
+    const data = await fn(authEmail.value, authPassword.value);
+    loggedIn.value = true;
+    userEmail.value = data.email;
   } catch (e) {
     authError.value = e.message;
   } finally {
