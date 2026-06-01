@@ -104,7 +104,7 @@
               }"
               :style="{ minWidth: w.width + 'px' }"
               @click="focusWord(wi)"
-            >{{ w.filled ? w.value : '' }}</span>
+            >{{ w.value || '' }}</span>
             <span class="word-space">&nbsp;</span>
 
         </div>
