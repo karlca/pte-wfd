@@ -61,6 +61,7 @@
           <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
           <button class="btn-cat" :class="{ active: selectedCategory === 'jj' }" @click="selectCategory('jj')">JJ (110)</button>
         </div>
+        <div v-if="!hasSavedState" style="color:#888;font-size:12px;margin-bottom:8px">No saved progress found</div>
         <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue ({{ savedStateData.currentIndex + 1 }}/{{ savedStateData.sentences.length }})</button>
         <button class="btn-auth" style="margin-top:12px" @click="startWithCategory">Start New</button>
       </div>
@@ -512,7 +513,7 @@ function saveCurrentState() {
       category: selectedCategory.value,
       mode: practiceMode.value,
     });
-  } catch (e) { console.error('saveState failed:', e); }
+  } catch (e) { console.error('[PTE] saveState failed:', e); }
 }
 
 async function clearState() {
@@ -523,16 +524,18 @@ async function clearState() {
 }
 
 async function checkSavedState(autoResume = false) {
+  console.warn('[PTE] checkSavedState called, loggedIn:', loggedIn.value, 'autoResume:', autoResume);
   if (!loggedIn.value) return;
   try {
     const state = await loadPracticeState();
+    console.warn('[PTE] loadPracticeState returned:', state);
     console.log('Loaded state from server:', JSON.stringify({ hasIds: !!state?.sentenceIds, idCount: state?.sentenceIds?.length || state?.sentences?.length || 0, index: state?.currentIndex }));
     if (state && ((state.sentenceIds && state.sentenceIds.length > 0) || (state.sentences && state.sentences.length > 0))) {
       hasSavedState.value = true;
       savedStateData.value = state;
       if (autoResume) resumePractice();
     }
-  } catch (e) {}
+  } catch (e) { console.error('[PTE] checkSavedState error:', e); }
 }
 
 function resumePractice() {
