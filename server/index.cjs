@@ -144,6 +144,8 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get("/{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
+    const filePath = path.join(distPath, req.path === "/" ? "index.html" : req.path.slice(1));
+    if (fs.existsSync(filePath)) return res.sendFile(filePath);
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
