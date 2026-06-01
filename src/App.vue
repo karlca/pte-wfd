@@ -2,6 +2,10 @@
   <div class="app">
     <header class="header">
       <h1>PTE WFD 练习</h1>
+      <select v-if="availableVoices.length > 0" v-model="selectedVoiceName" @change="onVoiceChange" class="voice-select">
+          <option value="">Auto</option>
+          <option v-for="v in availableVoices" :key="v.name" :value="v.name">{{ v.name }}</option>
+        </select>
       <span class="user-info">
         <span class="user-email">{{ userEmail }}</span>
         <button class="btn-logout" @click="doLogout" title="Logout">&times;</button>
@@ -248,17 +252,17 @@ onMounted(() => {
   if (isLoggedIn()) {
     startPractice(wfdSentences);
   }
-  speechSynthesis.getVoices();
-  speechSynthesis.onvoiceschanged = () => {
+  function loadVoices() {
     const voices = speechSynthesis.getVoices();
-    availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
+    if (voices.length > 0) {
+      availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
+    }
+  }
+  loadVoices();
+  speechSynthesis.onvoiceschanged = () => {
+    loadVoices();
     getBestVoice();
   };
-  // Also load immediately in case voices are already available
-  const voices = speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
-  }
 });
 
 function shuffleArray(arr) {
