@@ -283,18 +283,22 @@ const completionMessage = computed(() => {
 
 const parsedWords = computed(() => {
   if (!currentText.value) return [];
-  return currentText.value.split(/\s+/).filter(w => w.length > 0).map((word, wi) => {
-    const key = String(wi);
+  const rawWords = currentText.value.split(/\s+/).filter(w => w.length > 0);
+  const result = [];
+  rawWords.forEach((rawWord, wi) => {
+    const cleanWord = rawWord.replace(/[^a-zA-Z]/g, "");
+    if (cleanWord.length === 0) return; // skip pure punctuation
+    const key = String(result.length);
     const userVal = userInput.value[key] || "";
-    const cleanWord = word.replace(/[^a-zA-Z]/g, "");
     const cleanVal = userVal.replace(/[^a-zA-Z]/g, "");
-    return {
-      word: cleanWord, display: word, key,
+    result.push({
+      word: cleanWord, display: rawWord, key,
       filled: userVal !== "", value: userVal,
       isCorrect: cleanVal.toLowerCase() === cleanWord.toLowerCase(),
       width: cleanWord.length * 17 + 10,
-    };
+    });
   });
+  return result;
 });
 
 const totalWords = computed(() =>
