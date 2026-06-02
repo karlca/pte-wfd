@@ -309,6 +309,9 @@ createApp({
     }
     async function toggleCourse(c) {
       if (expandedCourseId.value === c.id) { expandedCourseId.value = null; return; }
+      if (!courseSentences.value[c.id]) {
+        courseSentences.value = { ...courseSentences.value, [c.id]: [] };
+      }
       await loadCourseSentences(c.id);
       expandedCourseId.value = c.id;
     }
@@ -345,7 +348,8 @@ createApp({
       const token = localStorage.getItem("admin_token");
       await fetch(API + "/admin/sentences/" + s.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
       c.sentenceCount = Math.max(0, (c.sentenceCount || 0) - 1);
-      const list = (courseSentences.value[c.id] || []).filter(x => x.id !== s.id);
+      const arr = courseSentences.value[c.id] || [];
+      const list = arr.filter(x => x.id !== s.id);
       courseSentences.value = { ...courseSentences.value, [c.id]: list };
     }
     async function createCourse() {
