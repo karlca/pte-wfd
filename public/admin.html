@@ -104,8 +104,8 @@ tr.detail-row td { padding: 0; background: #fafbff; }
         <div style="font-size:11px;color:#aaa;margin-top:4px">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide sentences' : 'Show sentences' }}</div>
         </div>
         <div v-if="expandedCourseId === c.id" style="padding:14px">
-          <div v-if="courseSentences[c.id] && courseSentences[c.id].length > 0">
-            <div v-for="s in (courseSentences[c.id] || [])" :key="s.id" style="border-bottom:1px solid #f5f5f5;padding:8px 0">
+          <div v-if="c.sentences && c.sentences.length > 0">
+            <div v-for="s in (c.sentences || [])" :key="s.id" style="border-bottom:1px solid #f5f5f5;padding:8px 0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                 <span style="font-size:11px;color:#888;min-width:36px">#{{ s.id }}</span>
                 <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" placeholder="English" />
@@ -245,7 +245,7 @@ createApp({
     const newCourseDesc = ref("");
     const newCoursePrice = ref(0);
     const expandedCourseId = ref(null);
-    const courseSentences = ref({});
+    // courseSentences removed - using c.sentences directly
     const newSentenceText = ref({});
     const newSentenceTrans = ref({});
     const showEditDialog = ref(false);
@@ -284,13 +284,13 @@ createApp({
         // Initialize empty sentences arrays
         const init = {};
         courseList.value.forEach(c => { init[c.id] = []; });
-        courseSentences.value = { ...init };
+        courseList.value.forEach(c => { c.sentences = []; });
         // Load sentence counts
         for (const c of courseList.value) {
           try {
             const sr = await fetch(API + "/courses/" + c.id + "/sentences");
             const sents = await sr.json();
-            c.sentenceCount = sents.length;
+            c.sentenceCount = sents.length; c.sentences = c.sentences || [];
           } catch(e) { c.sentenceCount = 0; }
         }
       } catch(e) {}
@@ -309,7 +309,7 @@ createApp({
     }
     async function toggleCourse(c) {
       if (expandedCourseId.value === c.id) { expandedCourseId.value = null; return; }
-      if (!courseSentences.value[c.id]) {
+      if (!c.sentences) {
         courseSentences.value = { ...courseSentences.value, [c.id]: [] };
       }
       await loadCourseSentences(c.id);
@@ -320,7 +320,7 @@ createApp({
         const token = localStorage.getItem("admin_token");
         const res = await fetch(API + "/courses/" + cid + "/sentences");
         const data = await res.json();
-        courseSentences.value = { ...courseSentences.value, [cid]: data };
+        const course = courseList.value.find(c => c.id == cid); if (course) course.sentences = data;
       } catch(e) {}
     }
     async function addSentence(c) {
@@ -348,7 +348,7 @@ createApp({
       const token = localStorage.getItem("admin_token");
       await fetch(API + "/admin/sentences/" + s.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
       c.sentenceCount = Math.max(0, (c.sentenceCount || 0) - 1);
-      const arr = courseSentences.value[c.id] || [];
+      const arr = c.sentences || [];
       const list = arr.filter(x => x.id !== s.id);
       courseSentences.value = { ...courseSentences.value, [c.id]: list };
     }
@@ -440,7 +440,7 @@ createApp({
     }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourseDialog, saveCourseEdit, deleteCourse, loadCourses, showEditDialog, editCourseName, editCourseDesc, editCoursePrice, editCourseDialog, saveCourseEdit, expandedCourseId, courseSentences, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourseDialog, saveCourseEdit, deleteCourse, loadCourses, showEditDialog, editCourseName, editCourseDesc, editCoursePrice, editCourseDialog, saveCourseEdit, expandedCourseId, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
   }
 }).mount("#app");
 </script>
