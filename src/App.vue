@@ -222,7 +222,7 @@ const blanksContainer = ref(null);
 
 async function fetchCourses() {
   try {
-    let list = await getCourses(); if (!list || list.length === 0) { list = [{id:1,name:'Test A'},{id:2,name:'Test B'}]; console.warn('[PTE] Using hardcoded courses'); }
+    const list = await getCourses();
     console.log('[PTE] fetchCourses got', list.length, 'courses:', list.map(c => c.name));
     courses.value = list;
   } catch(e) { console.error('[PTE] Failed to load courses:', e); }

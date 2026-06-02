@@ -49,11 +49,11 @@ export async function loadPracticeState() {
 }
 
 export async function getCourses() {
-  const res = await fetch(API + "/courses");
+  const res = await fetch(API + "/courses", { cache: "no-store" });
   return res.json();
 }
 
 export async function getCourseSentences(courseId) {
-  const res = await fetch(API + "/courses/" + courseId + "/sentences");
+  const res = await fetch(API + "/courses/" + courseId + "/sentences", { cache: "no-store" });
   return res.json();
 }
