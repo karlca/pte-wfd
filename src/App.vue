@@ -59,7 +59,7 @@
         <div class="cat-options" v-if="courses.length > 0">
           <button v-for="c in courses" :key="c.id" class="btn-cat" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
         </div>
-        <div v-else style="color:#888;font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses (count={{ courses.length }})' }}</div>
+        <div v-else style="color:#888;font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }} (courses.value.length = {{ courses.length }})</div>
         <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue</button></div>
     </div>
 
