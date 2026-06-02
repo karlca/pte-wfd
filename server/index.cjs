@@ -147,6 +147,38 @@ app.post("/api/admin/courses/:id/translate", adminAuth, async (req, res) => {
   res.json({ ok: true, translated: count, total: untranslated.length });
 });
 
+// Force seed (admin only)
+app.post("/api/admin/seed", adminAuth, async (req, res) => {
+  try {
+    const existing = await db.listCourses();
+    if (existing.length > 0) return res.json({ ok: false, error: "Courses already exist (" + existing.length + "). Delete them first." });
+    const seedPath = path.join(__dirname, "..", "src", "data", "sentences.js");
+    const raw = fs.readFileSync(seedPath, "utf-8");
+    const match = raw.match(/export const wfdSentences = \[([\s\S]*)\];/);
+    if (!match) return res.json({ ok: false, error: "No sentences found in file" });
+    const courseMap = {};
+    const categories = { "basic": "基础", "jj": "高频", "weekly": "周预测" };
+    for (const [key, name] of Object.entries(categories)) {
+      const c = await db.createCourse({ name, description: "", price: 0 });
+      courseMap[key] = c.id;
+    }
+    const entries = match[1].match(/\{[^}]+\}/g);
+    if (!entries) return res.json({ ok: false, error: "No entries found" });
+    let count = 0;
+    for (const entry of entries) {
+      const cm = entry.match(/category:\s*"(\w+)"/);
+      const em = entry.match(/en:\s*"([^"]*)"/);
+      const zm = entry.match(/zh:\s*"([^"]*)"/);
+      if (!cm || !em) continue;
+      const cid = courseMap[cm[1]];
+      if (!cid) continue;
+      await db.addSentence({ course_id: cid, title: em[1], translation: zm ? zm[1] : "", category: cm[1], degree: 1 });
+      count++;
+    }
+    res.json({ ok: true, courses: 3, sentences: count });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
 // Serve static frontend in production
 const path = require("path");
 const distPath = path.join(__dirname, "..", "dist");
