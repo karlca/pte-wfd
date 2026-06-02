@@ -33,6 +33,11 @@ export async function getWrongSentences() {
   return res.json();
 }
 
+export async function getStats() {
+  const res = await fetch(API + "/practice/stats", { headers: { Authorization: "Bearer " + getToken() } });
+  return res.json();
+}
+
 export async function savePracticeState(state) {
   const res = await fetch(API + "/practice/state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + getToken() }, body: JSON.stringify(state) });
   return res.json();
@@ -43,7 +48,12 @@ export async function loadPracticeState() {
   return res.json();
 }
 
-export async function getStats() {
-  const res = await fetch(API + "/practice/stats", { headers: { Authorization: "Bearer " + getToken() } });
+export async function getCourses() {
+  const res = await fetch(API + "/courses");
+  return res.json();
+}
+
+export async function getCourseSentences(courseId) {
+  const res = await fetch(API + "/courses/" + courseId + "/sentences");
   return res.json();
 }

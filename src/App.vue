@@ -57,9 +57,9 @@
       <div class="auth-card">
         <h2>Select Category</h2>
         <div class="cat-options">
-          <button class="btn-cat" :class="{ active: selectedCategory === 'all' }" @click="selectCategory('all')">All (379)</button>
-          <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
-          <button class="btn-cat" :class="{ active: selectedCategory === 'weekly' }" @click="selectCategory('weekly')">本周预测 (192)</button>
+          <button class="btn-cat" :class="{ active: selectedCourseId === 'all' }" @click="selectCategory('all')">All (379)</button>
+          <button class="btn-cat" :class="{ active: selectedCourseId === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
+          <button class="btn-cat" :class="{ active: selectedCourseId === 'weekly' }" @click="selectCategory('weekly')">本周预测 (192)</button>
         </div>
         <div v-if="!hasSavedState" style="color:#888;font-size:12px;margin-bottom:8px">No saved progress found</div>
         <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue ({{ savedStateData.currentIndex + 1 }}/{{ savedStateData.sentences.length }})</button>
@@ -174,8 +174,8 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from "vue";
-import { wfdSentences } from "./data/sentences.js";
-import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState } from "./api.js";
+
+import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState, getCourses, getCourseSentences } from "./api.js";
 
 const sentences = ref([]);
 const currentIndex = ref(0);
@@ -209,9 +209,12 @@ const elapsedSeconds = ref(0);
 let timerInterval = null;
 const wrongSentencesSet = ref(new Set());
 const practiceMode = ref("all");
-const selectedCategory = ref("all"); // "all" | "basic" | "jj"  // "all" | "wrong"
+const selectedCourseId = ref("all"); // "all" | "basic" | "jj"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
+const courses = ref([]);
+const selectedCourseId = ref(null);
+const loadingSentences = ref(false);
 const hasSavedState = ref(false);
 const savedStateData = ref(null);
 const perfectCount = ref(0);
@@ -223,17 +226,21 @@ const sessionAccuracy = ref(0);
 const hiddenInput = ref(null);
 const blanksContainer = ref(null);
 
-function selectCategory(cat) {
-  selectedCategory.value = cat;
+async function fetchCourses() {
+  try { courses.value = await getCourses(); }
+  catch(e) { console.error('Failed to load courses:', e); }
 }
 
-function startWithCategory() {
-  let list = wfdSentences;
-  if (selectedCategory.value !== "all") {
-    list = wfdSentences.filter(s => s.category === selectedCategory.value);
-  }
-  if (list.length === 0) list = wfdSentences;
-  startPractice(list);
+async function startWithCourse(courseId) {
+  selectedCourseId.value = courseId;
+  loadingSentences.value = true;
+  try {
+    let list = await getCourseSentences(courseId);
+    list = list.map(s => ({ id: s.id, en: s.title, zh: s.translation || "", category: s.category || "basic" }));
+    if (list.length === 0) return;
+    startPractice(list);
+  } catch(e) { console.error('Failed to load sentences:', e); }
+  finally { loadingSentences.value = false; }
 }
 
 function startPractice(list) {
@@ -481,7 +488,7 @@ function saveCurrentState() {
       sentences: sentences.value.map(s => ({ en: s.en, zh: s.zh, category: s.category })),
       currentIndex: currentIndex.value,
       userInput: userInput.value,
-      category: selectedCategory.value,
+      category: selectedCourseId.value,
       mode: practiceMode.value,
     });
   } catch (e) { console.error('[PTE] saveState failed:', e); }
@@ -526,7 +533,7 @@ function resumePractice() {
   }
   currentIndex.value = Math.min(state.currentIndex || 0, sentences.value.length - 1);
   userInput.value = state.userInput || {};
-  selectedCategory.value = state.category || "all";
+  selectedCourseId.value = state.category || "all";
   practiceMode.value = state.mode || "all";
   started.value = true;
   hasSavedState.value = false;
