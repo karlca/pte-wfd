@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app">
     <header class="header">
       <h1>PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
@@ -55,16 +55,12 @@
     <!-- Category Selector -->
     <div v-if="loggedIn && !started" class="auth-page">
       <div class="auth-card">
-        <h2>Select Category</h2>
-        <div class="cat-options">
-          <button class="btn-cat" :class="{ active: selectedCourseId === 'all' }" @click="selectCategory('all')">All (379)</button>
-          <button class="btn-cat" :class="{ active: selectedCourseId === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
-          <button class="btn-cat" :class="{ active: selectedCourseId === 'weekly' }" @click="selectCategory('weekly')">本周预测 (192)</button>
+        <h2>Select Course</h2>
+        <div class="cat-options" v-if="courses.length > 0">
+          <button v-for="c in courses" :key="c.id" class="btn-cat" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
         </div>
-        <div v-if="!hasSavedState" style="color:#888;font-size:12px;margin-bottom:8px">No saved progress found</div>
-        <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue ({{ savedStateData.currentIndex + 1 }}/{{ savedStateData.sentences.length }})</button>
-        <button class="btn-auth" style="margin-top:12px" @click="startWithCategory">Start New</button>
-      </div>
+        <div v-else style="color:#888;font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }}</div>
+        <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue</button></div>
     </div>
 
     <!-- Celebration Overlay -->
@@ -174,7 +170,6 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from "vue";
-
 import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState, getCourses, getCourseSentences } from "./api.js";
 
 const sentences = ref([]);
@@ -209,12 +204,11 @@ const elapsedSeconds = ref(0);
 let timerInterval = null;
 const wrongSentencesSet = ref(new Set());
 const practiceMode = ref("all");
-const selectedCourseId = ref("all"); // "all" | "basic" | "jj"  // "all" | "wrong"
+const selectedCourseId = ref(null);
+const courses = ref([]);
+const loadingSentences = ref(false); // "all"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
-const courses = ref([]);
-const selectedCourseId = ref(null);
-const loadingSentences = ref(false);
 const hasSavedState = ref(false);
 const savedStateData = ref(null);
 const perfectCount = ref(0);
@@ -488,7 +482,7 @@ function saveCurrentState() {
       sentences: sentences.value.map(s => ({ en: s.en, zh: s.zh, category: s.category })),
       currentIndex: currentIndex.value,
       userInput: userInput.value,
-      category: selectedCourseId.value,
+      category: selectedCourseId.value || 'all',
       mode: practiceMode.value,
     });
   } catch (e) { console.error('[PTE] saveState failed:', e); }
