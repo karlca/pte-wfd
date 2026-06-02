@@ -12,7 +12,8 @@ async function init() {
   if (DATABASE_URL) {
     pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
     await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;
-    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
+    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS site_stats (key TEXT PRIMARY KEY, value TEXT);`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, verified BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS practice_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, started_at TIMESTAMPTZ, ended_at TIMESTAMPTZ, duration_seconds INTEGER DEFAULT 0, sentences_practiced INTEGER DEFAULT 0);
@@ -34,6 +35,19 @@ function readJson() { try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"
 function writeJson(data) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); }
 
 module.exports = {
+  async incrementVisit() {
+    if (usePg) {
+      await pool.query("INSERT INTO site_stats (key, value) VALUES ('visits', '1') ON CONFLICT (key) DO UPDATE SET value = ((COALESCE(NULLIF(site_stats.value,''),'0'))::int + 1)::text");
+      const r = await pool.query("SELECT value FROM site_stats WHERE key='visits'");
+      return parseInt(r.rows[0]?.value || '0');
+    }
+    const data = readJson(); data.siteStats = data.siteStats || {}; data.siteStats.visits = (data.siteStats.visits || 0) + 1; writeJson(data);
+    return data.siteStats.visits;
+  },
+  async getVisitCount() {
+    if (usePg) { const r = await pool.query("SELECT value FROM site_stats WHERE key='visits'"); return parseInt(r.rows[0]?.value || '0'); }
+    return ((readJson().siteStats || {}).visits) || 0;
+  },
   // Course management
   async listCourses() {
     if (usePg) { const r = await pool.query("SELECT * FROM courses ORDER BY id"); return r.rows; }
@@ -100,7 +114,8 @@ module.exports = {
   },
   async updateUser(email, updates) {
     if (usePg) { const sets = Object.keys(updates).map((k,i) => `${k}=$${i+2}`).join(","); await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;
-    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
+    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS site_stats (key TEXT PRIMARY KEY, value TEXT);`);
     await pool.query(`UPDATE users SET ${sets} WHERE email=$1`, [email, ...Object.values(updates)]); return; }
     const data = readJson(); const idx = data.users.findIndex(u => u.email === email); if (idx >= 0) { Object.assign(data.users[idx], updates); writeJson(data); }
   },

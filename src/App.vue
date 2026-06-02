@@ -166,6 +166,10 @@
       </div>
     </div>
   </div>
+    <footer class="app-footer">
+      <span>Visits: {{ visitCount.toLocaleString() }}</span>
+    </footer>
+  </div>
 </template>
 
 <script setup>
@@ -206,7 +210,8 @@ const wrongSentencesSet = ref(new Set());
 const practiceMode = ref("all");
 const selectedCourseId = ref(null);
 const courses = ref([]);
-const loadingSentences = ref(false); // "all"  // "all" | "wrong"
+const loadingSentences = ref(false);
+const visitCount = ref(0); // "all"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
 const hasSavedState = ref(false);
@@ -262,7 +267,8 @@ onMounted(() => {
     // no default sentences, user selects course
   }
   function loadVoices() {
-    const voices = speechSynthesis.getVoices();
+    const voices = trackVisit();
+  speechSynthesis.getVoices();
     if (voices.length > 0) {
       availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
     }
@@ -586,7 +592,8 @@ function restart() {
 let preferredVoice = null;
 function getBestVoice() {
   if (preferredVoice) return preferredVoice;
-  const voices = speechSynthesis.getVoices();
+  const voices = trackVisit();
+  speechSynthesis.getVoices();
   if (voices.length === 0) return null;
   // Priority: native en-US voices with highest quality
   const ranked = voices.filter(v => v.lang.startsWith("en"));
@@ -658,11 +665,20 @@ function onVoiceChange() {
   localStorage.setItem("pte_voice", selectedVoiceName.value);
 }
 
+async function trackVisit() {
+  try {
+    const res = await fetch("/api/stats/visit", { method: "POST" });
+    const data = await res.json();
+    visitCount.value = data.visits;
+  } catch(e) {}
+}
+
 function playAudio() {
   if (!currentText.value || isPlaying.value) return;
   speechSynthesis.cancel();
 
-  const voices = speechSynthesis.getVoices();
+  const voices = trackVisit();
+  speechSynthesis.getVoices();
   if (voices.length === 0) {
     speechSynthesis.onvoiceschanged = () => {
       speechSynthesis.onvoiceschanged = null;
@@ -673,7 +689,8 @@ function playAudio() {
 
   let voice;
   if (selectedVoiceName.value) {
-    const voices = speechSynthesis.getVoices();
+    const voices = trackVisit();
+  speechSynthesis.getVoices();
     voice = voices.find(v => v.name === selectedVoiceName.value) || getBestVoice();
   } else {
     voice = getBestVoice();
@@ -819,4 +836,5 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .btn-share { background: #1a73e8; color: #fff; border-color: #1a73e8; }
 .btn-share:hover { background: #1557b0; }
 .completion .btn-nav:hover { background: #1b4332; }
+.app-footer { text-align: center; padding: 16px; font-size: 12px; color: #aaa; margin-top: 24px; }
 </style>

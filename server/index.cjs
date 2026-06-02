@@ -89,6 +89,15 @@ app.get("/api/admin/users/:id/detail", adminAuth, async (req, res) => {
 app.delete("/api/admin/users/:id", adminAuth, async (req, res) => { await db.deleteUser(req.params.id); res.json({ ok: true }); });
 
 // ---- Course & Sentence APIs ----
+app.post("/api/stats/visit", async (req, res) => {
+  const count = await db.incrementVisit();
+  res.json({ visits: count });
+});
+
+app.get("/api/stats/visits", async (req, res) => {
+  res.json({ visits: await db.getVisitCount() });
+});
+
 app.get("/api/courses", async (req, res) => { res.json(await db.listCourses()); });
 
 app.get("/api/courses/:id/sentences", async (req, res) => {
