@@ -17,6 +17,18 @@ body { font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif; bac
 .btn-danger { background:#d32f2f; color:#fff; border-color:#d32f2f; }
 .btn-sm { font-size:12px; padding:4px 10px; }
 .btn:hover { opacity:.85; }
+.verified { color: #2e7d32; }
+.unverified { color: #e65100; }
+.stat-card { flex:1; background:#fff; padding:16px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,.06); text-align:center; }
+.stat-card .num { font-size:28px; font-weight:700; color:#1a73e8; }
+.stat-card .label { font-size:11px; color:#888; margin-top:4px; }
+.expanded td { background: #e8f0fe; font-weight:600; }
+.detail-table { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:8px; }
+.detail-table th { background:#f0f0f0; font-size:11px; padding:6px 10px; }
+.detail-table td { padding:6px 10px; }
+.tabs { display:flex; gap:0; border:1px solid #d0d0d0; border-radius:8px; overflow:hidden; }
+.tabs button { padding:6px 16px; border:none; background:#f5f5f5; font-size:13px; cursor:pointer; color:#666; }
+.tabs button.active { background:#1a73e8; color:#fff; }
 .login-box { max-width:360px; margin:80px auto; background:#fff; padding:32px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); text-align:center; }
 .login-box h2 { margin-bottom:20px; }
 .login-box input { width:100%; padding:10px 12px; border:1px solid #d0d0d0; border-radius:8px; font-size:14px; margin-bottom:12px; outline:none; }
@@ -51,7 +63,48 @@ th { background:#fafafa; font-weight:600; color:#555; }
   <div v-else class="container">
     <div class="header">
       <h1>Admin Dashboard</h1>
+      <div class="tabs">
+        <button :class="{ active: activeTab === 'courses' }" @click="activeTab = 'courses'">Courses</button>
+        <button :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'; loadUsers()">Users</button>
+      </div>
       <button class="btn" @click="doLogout">Logout</button>
+    </div>
+
+    <!-- Users Tab -->
+    <div v-if="activeTab === 'users'">
+      <div class="stats-row" style="display:flex;gap:16px;margin-bottom:24px">
+        <div class="stat-card"><div class="num">{{ users.length }}</div><div class="label">Users</div></div>
+        <div class="stat-card"><div class="num">{{ totalSessions }}</div><div class="label">Sessions</div></div>
+        <div class="stat-card"><div class="num">{{ formatTime(totalTime) }}</div><div class="label">Time</div></div>
+        <div class="stat-card"><div class="num">{{ totalLogins }}</div><div class="label">Logins</div></div>
+      </div>
+      <table>
+        <thead><tr><th>Email</th><th>Status</th><th>Registered</th><th>Sessions</th><th>Time</th><th>Wrong</th><th>Logins</th><th>IP</th><th></th></tr></thead>
+        <tbody>
+          <tr v-for="u in users" :key="u.id" style="cursor:pointer" @click="toggleDetail(u)" :class="{ expanded: expandedId === u.id }">
+            <td>{{ u.email }}</td>
+            <td><span :class="u.verified ? 'verified' : 'unverified'">{{ u.verified ? 'Yes' : 'No' }}</span></td>
+            <td>{{ formatDate(u.created_at) }}</td>
+            <td>{{ u.totalSessions }}</td>
+            <td>{{ formatTime(u.totalTimeSeconds) }}</td>
+            <td>{{ u.wrongCount }}</td>
+            <td>{{ u.loginCount || 0 }}</td>
+            <td style="font-size:11px;font-family:monospace">{{ u.latestIp || '-' }}</td>
+            <td><button class="btn btn-danger btn-sm" @click.stop="deleteUser(u)">Del</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="expandedId && userDetail" style="margin-top:12px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <h3 style="font-size:14px;margin-bottom:8px">Login History</h3>
+        <table class="detail-table"><thead><tr><th>Time</th><th>IP</th></tr></thead>
+          <tbody><tr v-for="l in (userDetail.loginLogs||[]).slice(0,20)"><td>{{ formatDateTime(l.time) }}</td><td style="font-family:monospace;font-size:11px">{{ l.ip || '-' }}</td></tr></tbody></table>
+        <h3 style="font-size:14px;margin:12px 0 8px">Practice Sessions</h3>
+        <table class="detail-table"><thead><tr><th>Started</th><th>Ended</th><th>Duration</th><th>Sentences</th></tr></thead>
+          <tbody><tr v-for="s in (userDetail.sessions||[]).slice(0,20)"><td>{{ formatDateTime(s.started_at) }}</td><td>{{ formatDateTime(s.ended_at) }}</td><td>{{ formatTime(s.duration_seconds) }}</td><td>{{ s.sentences_practiced }}</td></tr></tbody></table>
+        <h3 style="font-size:14px;margin:12px 0 8px">Wrong Sentences</h3>
+        <table class="detail-table"><thead><tr><th>Sentence</th><th>Recorded</th></tr></thead>
+          <tbody><tr v-for="w in (userDetail.wrongSentences||[]).slice(0,30)"><td>{{ w.sentence_en }}</td><td>{{ formatDateTime(w.recorded_at) }}</td></tr></tbody></table>
+      </div>
     </div>
 
     <div class="course-form">
@@ -123,6 +176,11 @@ createApp({
     const newCourseName = ref(""); const newCourseDesc = ref(""); const newCoursePrice = ref(0);
     const showEditDialog = ref(false); const editName = ref(""); const editDesc = ref(""); const editPrice = ref(0);
     const editingCourse = ref(null); const translatingId = ref(null);
+    const activeTab = ref("courses");
+    const users = ref([]);
+    const expandedId = ref(null);
+    const userDetail = ref(null);
+    const detailLoading = ref(false);
     const newSentText = ref({}); const newSentTrans = ref({});
 
     async function doLogin() {
@@ -134,6 +192,35 @@ createApp({
       loggedIn.value = true; loadCourses();
     }
     function doLogout() { localStorage.removeItem("admin_token"); loggedIn.value = false; }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(API + "/admin/users", { headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") } });
+        users.value = await res.json();
+      } catch(e) {}
+    }
+    async function toggleDetail(u) {
+      if (expandedId.value === u.id) { expandedId.value = null; userDetail.value = null; return; }
+      expandedId.value = u.id;
+      detailLoading.value = true;
+      try {
+        const res = await fetch(API + "/admin/users/" + u.id + "/detail", { headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") } });
+        userDetail.value = await res.json();
+      } catch(e) {}
+      detailLoading.value = false;
+    }
+    async function deleteUser(u) {
+      if (!confirm("Delete " + u.email + "?")) return;
+      await fetch(API + "/admin/users/" + u.id, { method: "DELETE", headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") } });
+      if (expandedId.value === u.id) { expandedId.value = null; userDetail.value = null; }
+      await loadUsers();
+    }
+    function formatTime(s) { if (!s) return "0m"; const m = Math.floor(s/60); const h = Math.floor(m/60); return h > 0 ? h + "h " + (m%60) + "m" : m + "m " + (s%60) + "s"; }
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString("zh-CN") : "-"; }
+    function formatDateTime(d) { return d ? new Date(d).toLocaleString("zh-CN") : "-"; }
+    const totalSessions = Vue.computed(() => users.value.reduce((s, u) => s + u.totalSessions, 0));
+    const totalTime = Vue.computed(() => users.value.reduce((s, u) => s + u.totalTimeSeconds, 0));
+    const totalLogins = Vue.computed(() => users.value.reduce((s, u) => s + (u.loginCount || 0), 0));
 
     async function loadCourses() {
       loading.value = true;
