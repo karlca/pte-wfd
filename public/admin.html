@@ -86,6 +86,9 @@ tr.detail-row td { padding: 0; background: #fafbff; }
       <div v-for="c in courseList" :key="c.id" style="background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
         <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid #f0f0f0" @click="toggleCourse(c)">
           <span style="font-weight:600">{{ c.name }}</span>
+          <button class="btn btn-sm" @click.stop="translateCourse(c)" :disabled="translatingCourseId === c.id" style="font-size:11px;background:#f0f0f0">
+            {{ translatingCourseId === c.id ? 'Translating...' : 'Translate' }}
+          </button>
           <span style="font-size:12px;color:#888">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide' : 'Show' }}</span>
           <div>
             <button class="btn btn-sm" @click.stop="editCourse(c)">Edit</button>
@@ -235,6 +238,7 @@ createApp({
     const courseSentences = ref({});
     const newSentenceText = ref({});
     const newSentenceTrans = ref({});
+    const translatingCourseId = ref(null);
     const expandedId = ref(null);
     const userDetail = ref(null);
     const detailLoading = ref(false);
@@ -271,6 +275,18 @@ createApp({
           } catch(e) { c.sentenceCount = 0; }
         }
       } catch(e) {}
+    }
+    async function translateCourse(c) {
+      if (!confirm("Auto-translate missing Chinese translations for \"" + c.name + "\"?")) return;
+      translatingCourseId.value = c.id;
+      try {
+        const token = localStorage.getItem("admin_token");
+        const res = await fetch(API + "/admin/courses/" + c.id + "/translate", { method: "POST", headers: { Authorization: "Bearer " + token } });
+        const result = await res.json();
+        alert("Translated " + result.translated + " / " + result.total + " sentences");
+        await loadCourseSentences(c.id);
+      } catch(e) { alert("Translation failed"); }
+      translatingCourseId.value = null;
     }
     async function toggleCourse(c) {
       expandedCourseId.value = expandedCourseId.value === c.id ? null : c.id;
@@ -389,7 +405,7 @@ createApp({
     }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
   }
 }).mount("#app");
 </script>

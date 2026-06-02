@@ -128,6 +128,25 @@ app.delete("/api/admin/sentences/:id", adminAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Auto-translate missing translations
+app.post("/api/admin/courses/:id/translate", adminAuth, async (req, res) => {
+  const sentences = await db.getCourseSentences(req.params.id);
+  const untranslated = sentences.filter(s => !s.translation);
+  let count = 0;
+  for (const s of untranslated.slice(0, 50)) {
+    try {
+      const resp = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(s.title) + "&langpair=en|zh-CN");
+      const data = await resp.json();
+      if (data.responseData && data.responseData.translatedText) {
+        await db.updateSentence(s.id, { title: s.title, translation: data.responseData.translatedText });
+        count++;
+      }
+      await new Promise(r => setTimeout(r, 200));
+    } catch(e) {}
+  }
+  res.json({ ok: true, translated: count, total: untranslated.length });
+});
+
 // Serve static frontend in production
 const path = require("path");
 const distPath = path.join(__dirname, "..", "dist");
