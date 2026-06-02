@@ -134,6 +134,11 @@
         <button class="btn-mode" :class="{ active: practiceMode === 'wrong' }" @click="switchMode('wrong')" :disabled="wrongSentencesList.length === 0">
           Wrong ({{ wrongSentencesList.length }})
         </button>
+        <select v-model="repeatCount" class="voice-select" style="max-width:70px" title="Repeat">
+          <option :value="1">x1</option>
+          <option :value="5">x5</option>
+          <option :value="10">x10</option>
+        </select>
         <span class="timer-display">{{ Math.floor(elapsedSeconds / 60) }}:{{ String(elapsedSeconds % 60).padStart(2, '0') }}</span>
       </div>
       <div class="nav-buttons">
