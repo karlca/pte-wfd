@@ -610,6 +610,7 @@ async function doLogin() {
     const data = await fn(authEmail.value, authPassword.value);
     loggedIn.value = true;
     userEmail.value = data.email;
+    fetchCourses();
   } catch (e) {
     authError.value = e.message;
   } finally {
