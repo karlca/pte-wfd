@@ -94,15 +94,23 @@ tr.detail-row td { padding: 0; background: #fafbff; }
         </div>
         <div v-if="expandedCourseId === c.id" style="padding:14px">
           <div v-if="courseSentences[c.id] && courseSentences[c.id].length > 0">
-            <div v-for="s in courseSentences[c.id]" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">
-              <span style="font-size:12px;color:#888;min-width:40px">#{{ s.id }}</span>
-              <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" />
-              <button class="btn btn-danger btn-sm" @click="deleteSentence(c, s)">Del</button>
+            <div v-for="s in courseSentences[c.id]" :key="s.id" style="border-bottom:1px solid #f5f5f5;padding:8px 0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span style="font-size:11px;color:#888;min-width:36px">#{{ s.id }}</span>
+                <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" placeholder="English" />
+                <button class="btn btn-danger btn-sm" @click="deleteSentence(c, s)">Del</button>
+              </div>
+              <div style="display:flex;gap:8px;padding-left:44px">
+                <input :value="s.translation || ''" @change="updateSentenceTrans(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #eee;border-radius:4px;font-size:12px;color:#666;background:#fafafa" placeholder="Chinese translation" />
+              </div>
             </div>
           </div>
           <div v-else style="color:#aaa;font-size:12px">No sentences</div>
           <div style="margin-top:10px;display:flex;gap:8px">
-            <input v-model="newSentenceText[c.id]" placeholder="Add sentence" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px" @keyup.enter="addSentence(c)" />
+            <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                <input v-model="newSentenceText[c.id]" placeholder="English sentence" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px" @keyup.enter="addSentence(c)" />
+                <input v-model="newSentenceTrans[c.id]" placeholder="Chinese translation (optional)" style="padding:6px 10px;border:1px solid #eee;border-radius:6px;font-size:12px;color:#888" />
+              </div>
             <button class="btn btn-primary btn-sm" @click="addSentence(c)">Add</button>
           </div>
         </div>
@@ -226,6 +234,7 @@ createApp({
     const expandedCourseId = ref(null);
     const courseSentences = ref({});
     const newSentenceText = ref({});
+    const newSentenceTrans = ref({});
     const expandedId = ref(null);
     const userDetail = ref(null);
     const detailLoading = ref(false);
@@ -278,14 +287,20 @@ createApp({
       const text = (newSentenceText.value[c.id] || "").trim();
       if (!text) return;
       const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses/" + c.id + "/sentences", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: text, degree: 1, category: "basic" }) });
+      await fetch(API + "/admin/courses/" + c.id + "/sentences", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: text, translation: newSentenceTrans.value[c.id] || "", degree: 1, category: "basic" }) });
       newSentenceText.value[c.id] = "";
+      newSentenceTrans.value[c.id] = "";
       c.sentenceCount = (c.sentenceCount || 0) + 1;
       await loadCourseSentences(c.id);
     }
+    async function updateSentenceTrans(s, newTrans) {
+      const token = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: s.title, translation: newTrans }) });
+      s.translation = newTrans;
+    }
     async function updateSentence(s, newTitle) {
       const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: newTitle }) });
+      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: newTitle, translation: s.translation || "" }) });
       s.title = newTitle;
     }
     async function deleteSentence(c, s) {
@@ -374,7 +389,7 @@ createApp({
     }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, deleteSentence };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans };
   }
 }).mount("#app");
 </script>
