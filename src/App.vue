@@ -165,7 +165,6 @@
         <button class="btn-nav" @click="restart">再来一次</button>
       </div>
     </div>
-  </div>
     <footer class="app-footer">
       <span>Visits: {{ visitCount.toLocaleString() }}</span>
     </footer>
