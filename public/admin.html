@@ -105,7 +105,7 @@ tr.detail-row td { padding: 0; background: #fafbff; }
         </div>
         <div v-if="expandedCourseId === c.id" style="padding:14px">
           <div v-if="courseSentences[c.id] && courseSentences[c.id].length > 0">
-            <div v-for="s in courseSentences[c.id]" :key="s.id" style="border-bottom:1px solid #f5f5f5;padding:8px 0">
+            <div v-for="s in (courseSentences[c.id] || [])" :key="s.id" style="border-bottom:1px solid #f5f5f5;padding:8px 0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                 <span style="font-size:11px;color:#888;min-width:36px">#{{ s.id }}</span>
                 <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" placeholder="English" />
