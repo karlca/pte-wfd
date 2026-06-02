@@ -239,7 +239,7 @@ createApp({
     const error = ref("");
     const loading = ref(false);
     const users = ref([]);
-    const activeTab = ref("users");
+    const activeTab = ref("courses");
     const courseList = ref([]);
     const newCourseName = ref("");
     const newCourseDesc = ref("");
@@ -438,7 +438,7 @@ createApp({
       const lastLogin = new Date(u.latestLoginTime).getTime();
       return Date.now() - lastLogin < 10 * 60 * 1000;
     }
-    if (loggedIn.value) loadUsers();
+    if (loggedIn.value) { loadUsers(); loadCourses(); }
 
     return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourseDialog, saveCourseEdit, deleteCourse, loadCourses, showEditDialog, editCourseName, editCourseDesc, editCoursePrice, editCourseDialog, saveCourseEdit, expandedCourseId, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
   }
