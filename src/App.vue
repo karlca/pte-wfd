@@ -59,7 +59,7 @@
         <div class="cat-options">
           <button class="btn-cat" :class="{ active: selectedCategory === 'all' }" @click="selectCategory('all')">All (192)</button>
           <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (0)</button>
-          <button class="btn-cat" :class="{ active: selectedCategory === 'jj' }" @click="selectCategory('jj')">JJ (192)</button>
+          <button class="btn-cat" :class="{ active: selectedCategory === 'weekly' }" @click="selectCategory('weekly')">本周预测 (192)</button>
         </div>
         <div v-if="!hasSavedState" style="color:#888;font-size:12px;margin-bottom:8px">No saved progress found</div>
         <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue ({{ savedStateData.currentIndex + 1 }}/{{ savedStateData.sentences.length }})</button>
