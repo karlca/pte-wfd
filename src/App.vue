@@ -57,8 +57,8 @@
       <div class="auth-card">
         <h2>Select Category</h2>
         <div class="cat-options">
-          <button class="btn-cat" :class="{ active: selectedCategory === 'all' }" @click="selectCategory('all')">All (192)</button>
-          <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (0)</button>
+          <button class="btn-cat" :class="{ active: selectedCategory === 'all' }" @click="selectCategory('all')">All (379)</button>
+          <button class="btn-cat" :class="{ active: selectedCategory === 'basic' }" @click="selectCategory('basic')">Basic (77)</button>
           <button class="btn-cat" :class="{ active: selectedCategory === 'weekly' }" @click="selectCategory('weekly')">本周预测 (192)</button>
         </div>
         <div v-if="!hasSavedState" style="color:#888;font-size:12px;margin-bottom:8px">No saved progress found</div>
