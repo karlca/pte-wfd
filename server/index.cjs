@@ -141,23 +141,6 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-db.init().then(async () => {
-  // Seed default course with existing sentences
-  try {
-    const sentences = null;
-    // Seed from JSON file instead
-    try {
-      const seedPath = path.join(__dirname, "..", "src", "data", "sentences.js");
-      const seedContent = fs.readFileSync(seedPath, "utf-8");
-      const match = seedContent.match(/export const wfdSentences = (\[[\s\S]*\]);/);
-      if (match) {
-        const parsed = eval(match[1]);
-        await db.seedDefaultCourse(parsed);
-      }
-    } catch (e2) { console.log("Seed error:", e2.message); }
-  } else if (sentences && sentences.wfdSentences) {
-      await db.seedDefaultCourse(sentences.wfdSentences);
-    }
-  } catch (e) { console.log("Seed skipped:", e.message); }
-  app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
+db.init().then(() => {
+    app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
 });
