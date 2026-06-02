@@ -4,6 +4,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const db = require("./db.cjs");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -87,6 +89,46 @@ app.get("/api/admin/users/:id/detail", adminAuth, async (req, res) => {
 });
 app.delete("/api/admin/users/:id", adminAuth, async (req, res) => { await db.deleteUser(req.params.id); res.json({ ok: true }); });
 
+// ---- Course & Sentence APIs ----
+app.get("/api/courses", async (req, res) => { res.json(await db.listCourses()); });
+
+app.get("/api/courses/:id/sentences", async (req, res) => {
+  const sentences = await db.getCourseSentences(req.params.id);
+  res.json(sentences);
+});
+
+// Admin course CRUD
+app.post("/api/admin/courses", adminAuth, async (req, res) => {
+  const course = await db.createCourse(req.body);
+  res.json(course);
+});
+
+app.put("/api/admin/courses/:id", adminAuth, async (req, res) => {
+  await db.updateCourse(req.params.id, req.body);
+  res.json({ ok: true });
+});
+
+app.delete("/api/admin/courses/:id", adminAuth, async (req, res) => {
+  await db.deleteCourse(req.params.id);
+  res.json({ ok: true });
+});
+
+// Admin sentence CRUD
+app.post("/api/admin/courses/:id/sentences", adminAuth, async (req, res) => {
+  const s = await db.addSentence({ ...req.body, course_id: req.params.id });
+  res.json(s);
+});
+
+app.put("/api/admin/sentences/:id", adminAuth, async (req, res) => {
+  await db.updateSentence(req.params.id, req.body);
+  res.json({ ok: true });
+});
+
+app.delete("/api/admin/sentences/:id", adminAuth, async (req, res) => {
+  await db.deleteSentence(req.params.id);
+  res.json({ ok: true });
+});
+
 // Serve static frontend in production
 const fs = require("fs");
 const path = require("path");
@@ -101,6 +143,23 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-db.init().then(() => {
+db.init().then(async () => {
+  // Seed default course with existing sentences
+  try {
+    const sentences = null;
+    // Seed from JSON file instead
+    try {
+      const seedPath = path.join(__dirname, "..", "src", "data", "sentences.js");
+      const seedContent = fs.readFileSync(seedPath, "utf-8");
+      const match = seedContent.match(/export const wfdSentences = (\[[\s\S]*\]);/);
+      if (match) {
+        const parsed = eval(match[1]);
+        await db.seedDefaultCourse(parsed);
+      }
+    } catch (e2) { console.log("Seed error:", e2.message); }
+  } else if (sentences && sentences.wfdSentences) {
+      await db.seedDefaultCourse(sentences.wfdSentences);
+    }
+  } catch (e) { console.log("Seed skipped:", e.message); }
   app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
 });

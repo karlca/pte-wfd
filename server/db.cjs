@@ -17,6 +17,8 @@ async function init() {
       CREATE TABLE IF NOT EXISTS practice_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, started_at TIMESTAMPTZ, ended_at TIMESTAMPTZ, duration_seconds INTEGER DEFAULT 0, sentences_practiced INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS wrong_sentences (id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, sentence_en TEXT NOT NULL, recorded_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS practice_state (user_id TEXT PRIMARY KEY, state JSONB DEFAULT '{}', saved_at TIMESTAMPTZ DEFAULT NOW());
+      CREATE TABLE IF NOT EXISTS courses (id SERIAL PRIMARY KEY, name TEXT NOT NULL, description TEXT, created_at TIMESTAMPTZ DEFAULT NOW());
+      CREATE TABLE IF NOT EXISTS db_sentences (id SERIAL PRIMARY KEY, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, qnum TEXT, title TEXT NOT NULL, translation TEXT DEFAULT '', degree INTEGER DEFAULT 1, category TEXT DEFAULT 'basic', created_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS login_logs (id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, time TIMESTAMPTZ DEFAULT NOW());
     `);
     usePg = true;
@@ -31,6 +33,49 @@ function readJson() { try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"
 function writeJson(data) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); }
 
 module.exports = {
+  // Course management
+  async listCourses() {
+    if (usePg) { const r = await pool.query("SELECT * FROM courses ORDER BY id"); return r.rows; }
+    return (readJson().courses || []).sort((a,b) => a.id - b.id);
+  },
+  async createCourse(course) {
+    if (usePg) { const r = await pool.query("INSERT INTO courses (name, description) VALUES ($1,$2) RETURNING *", [course.name, course.description]); return r.rows[0]; }
+    const data = readJson(); data.courses = data.courses || []; course.id = (data.courses.length > 0 ? Math.max(...data.courses.map(c => c.id)) + 1 : 1); data.courses.push(course); writeJson(data); return course;
+  },
+  async updateCourse(id, updates) {
+    if (usePg) { await pool.query("UPDATE courses SET name=$1, description=$2 WHERE id=$3", [updates.name, updates.description, id]); return; }
+  },
+  async deleteCourse(id) {
+    if (usePg) { await pool.query("DELETE FROM db_sentences WHERE course_id=$1", [id]); await pool.query("DELETE FROM courses WHERE id=$1", [id]); return; }
+  },
+  // Sentence management
+  async getCourseSentences(courseId) {
+    if (usePg) { const r = await pool.query("SELECT * FROM db_sentences WHERE course_id=$1 ORDER BY id", [courseId]); return r.rows; }
+    return (readJson().dbSentences || []).filter(s => s.course_id == courseId);
+  },
+  async addSentence(sentence) {
+    if (usePg) { const r = await pool.query("INSERT INTO db_sentences (course_id, qnum, title, translation, degree, category) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *", [sentence.course_id, sentence.qnum, sentence.title, sentence.translation, sentence.degree, sentence.category]); return r.rows[0]; }
+    const data = readJson(); data.dbSentences = data.dbSentences || []; sentence.id = data.dbSentences.length + 1; data.dbSentences.push(sentence); writeJson(data); return sentence;
+  },
+  async updateSentence(id, updates) {
+    if (usePg) { await pool.query("UPDATE db_sentences SET title=$1, translation=$2, qnum=$3, degree=$4, category=$5 WHERE id=$6", [updates.title, updates.translation, updates.qnum, updates.degree, updates.category, id]); return; }
+  },
+  async deleteSentence(id) {
+    if (usePg) { await pool.query("DELETE FROM db_sentences WHERE id=$1", [id]); return; }
+  },
+  async seedDefaultCourse(sentences) {
+    if (usePg) {
+      const existing = await pool.query("SELECT id FROM courses LIMIT 1");
+      if (existing.rows.length === 0) {
+        const c = await pool.query("INSERT INTO courses (name, description) VALUES ($1,$2) RETURNING id", ["Default", "Default course"]);
+        const cid = c.rows[0].id;
+        for (const s of sentences) {
+          await pool.query("INSERT INTO db_sentences (course_id, title, translation, category, degree) VALUES ($1,$2,$3,$4,$5)", [cid, s.en, s.zh, s.category, 1]);
+        }
+        console.log("Seeded default course with " + sentences.length + " sentences");
+      }
+    }
+  },
   async savePracticeState(userId, state) {
     if (usePg) { await pool.query("INSERT INTO practice_state (user_id, state) VALUES ($1,$2) ON CONFLICT (user_id) DO UPDATE SET state=$2, saved_at=NOW()", [userId, JSON.stringify(state)]); return; }
     const data = readJson(); data.practiceState = data.practiceState || {}; data.practiceState[userId] = state; writeJson(data);
