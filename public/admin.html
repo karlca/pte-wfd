@@ -107,7 +107,7 @@ th { background:#fafafa; font-weight:600; color:#555; }
       </div>
     </div>
 
-    <div class="course-form">
+    <div v-if="activeTab === 'courses'" class="course-form">
       <input v-model="newCourseName" placeholder="Course name" />
       <input v-model="newCourseDesc" placeholder="Description" style="flex:1" />
       <input v-model="newCoursePrice" type="number" placeholder="Price (0=free)" style="width:100px" min="0" />
@@ -148,6 +148,8 @@ th { background:#fafafa; font-weight:600; color:#555; }
           <button class="btn btn-primary btn-sm" @click="addSentence(c)">Add</button>
         </div>
       </div>
+    </div>
+
     </div>
 
     <!-- Edit Dialog -->
