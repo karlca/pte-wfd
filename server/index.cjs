@@ -133,7 +133,7 @@ app.post("/api/admin/courses/:id/translate", adminAuth, async (req, res) => {
   const sentences = await db.getCourseSentences(req.params.id);
   const untranslated = sentences.filter(s => !s.translation);
   let count = 0;
-  for (const s of untranslated.slice(0, 50)) {
+  for (const s of untranslated) {
     try {
       const resp = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(s.title) + "&langpair=en|zh-CN");
       const data = await resp.json();
