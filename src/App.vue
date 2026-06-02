@@ -286,11 +286,11 @@ const parsedWords = computed(() => {
   const rawWords = currentText.value.split(/\s+/).filter(w => w.length > 0);
   const result = [];
   rawWords.forEach((rawWord, wi) => {
-    const cleanWord = rawWord.replace(/[^a-zA-Z-]/g, "").replace(/^-+|-+$/g, "");
+    const cleanWord = rawWord.replace(/[^a-zA-Z'\-]/g, "").replace(/^['\-]+|['\-]+$/g, "");
     if (cleanWord.length === 0) return; // skip pure punctuation
     const key = String(result.length);
     const userVal = userInput.value[key] || "";
-    const cleanVal = userVal.replace(/[^a-zA-Z-]/g, "").replace(/^-+|-+$/g, "");
+    const cleanVal = userVal.replace(/[^a-zA-Z'\-]/g, "").replace(/^['\-]+|['\-]+$/g, "");
     result.push({
       word: cleanWord, display: rawWord, key,
       filled: cleanVal.length >= cleanWord.length, value: userVal,
@@ -343,7 +343,7 @@ function onInput(e) {
   if (activeWordIndex.value < 0) { hiddenInput.value.value = ""; return; }
   const val = e.target.value;
   if (!val) return;
-  const cleaned = val.replace(/[^a-zA-Z-]/g, "");
+  const cleaned = val.replace(/[^a-zA-Z'\-]/g, "");
   if (!cleaned) { hiddenInput.value.value = ""; return; }
   const key = String(activeWordIndex.value);
   const newVal = (userInput.value[key] || "") + cleaned;
@@ -378,7 +378,7 @@ function onKeydown(e) {
     moveToNextEmpty(activeWordIndex.value);
     return;
   }
-  if (/^[a-zA-Z-]$/.test(e.key)) {
+  if (/^[a-zA-Z'\-]$/.test(e.key)) {
     e.preventDefault();
     if (activeWordIndex.value < 0) return;
     const key = String(activeWordIndex.value);
