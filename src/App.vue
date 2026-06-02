@@ -182,6 +182,8 @@ const isPlaying = ref(false);
 const selectedVoiceName = ref(localStorage.getItem("pte_voice") || "");
 const availableVoices = ref([]);
 const autoAdvance = ref(true);
+const repeatCount = ref(1);
+const currentRepeat = ref(1);
 const started = ref(false);
 const loggedIn = ref(isLoggedIn());
 const userEmail = ref(getUserEmail() || "");
@@ -235,6 +237,7 @@ function startPractice(list) {
   started.value = true;
   currentIndex.value = 0;
   userInput.value = {};
+  currentRepeat.value = 1;
   sessionStart.value = Date.now();
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
