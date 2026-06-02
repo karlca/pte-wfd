@@ -1,58 +1,42 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin - PTE WFD v2</title>
+<title>Admin - PTE WFD v3</title>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>const API = (window.location.hostname === "localhost") ? "http://localhost:3001/api" : "/api";</script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f5f5; color: #333; }
-.container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
-.header { display: flex; align-items: center; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e0e0e0; }
-.header { display: flex; align-items: center; gap: 16px; }
-.header h1 { font-size: 22px; }
-.tabs { display: flex; gap: 0; border: 1px solid #d0d0d0; border-radius: 8px; overflow: hidden; }
-.tabs button { padding: 6px 16px; border: none; background: #f5f5f5; font-size: 13px; cursor: pointer; color: #666; }
-.tabs button.active { background: #1a73e8; color: #fff; }
-.courses-panel { }
-.course-form { margin-bottom: 12px; display: flex; align-items: center; }
-.btn { padding: 8px 16px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; font-size: 14px; background: #fff; }
-.btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-.btn-danger { background: #d32f2f; color: #fff; border-color: #d32f2f; }
-.btn-sm { font-size: 12px; padding: 4px 10px; }
-.btn:hover { opacity: 0.85; }
-.login-box { max-width: 360px; margin: 80px auto; background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
-.login-box h2 { margin-bottom: 20px; }
-.login-box input { width: 100%; padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; margin-bottom: 12px; outline: none; }
-.login-box input:focus { border-color: #1a73e8; }
-.error { color: #d32f2f; font-size: 13px; margin-bottom: 10px; }
-.stats-row { display: flex; gap: 16px; margin-bottom: 24px; }
-.stat-card { flex: 1; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center; min-width: 0; }
-.stat-card .num { font-size: 28px; font-weight: 700; color: #1a73e8; }
-.stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
-table { width: 100%; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-collapse: collapse; overflow: hidden; font-size: 13px; }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-th { background: #fafafa; font-weight: 600; color: #555; white-space: nowrap; }
-tr.user-row { cursor: pointer; }
-tr.user-row:hover td { background: #f0f4ff; }
-tr.user-row.expanded td { background: #e8f0fe; font-weight: 600; }
-tr.detail-row td { padding: 0; background: #fafbff; }
-.detail-panel { padding: 16px 20px; }
-.detail-panel h3 { font-size: 14px; color: #333; margin-bottom: 10px; margin-top: 14px; }
-.detail-panel h3:first-child { margin-top: 0; }
-.detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.detail-table th { background: #f0f0f0; font-size: 11px; padding: 6px 10px; }
-.detail-table td { padding: 6px 10px; }
-.verified { color: #2e7d32; }
-.unverified { color: #e65100; }
-.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-.tag-login { background: #e3f2fd; color: #1565c0; }
-.tag-session { background: #e8f5e9; color: #2e7d32; }
-.tag-wrong { background: #fce4ec; color: #c62828; }
-.tag-online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4caf50; margin-right: 4px; }
-.loading { text-align: center; padding: 40px; color: #888; }
-.no-data { color: #aaa; font-size: 12px; padding: 8px 0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif; background:#f5f5f5; color:#333; }
+.container { max-width:1000px; margin:0 auto; padding:24px 16px; }
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #e0e0e0; gap:16px; }
+.header h1 { font-size:22px; }
+.btn { padding:8px 16px; border:1px solid #ccc; border-radius:6px; cursor:pointer; font-size:14px; background:#fff; }
+.btn-primary { background:#1a73e8; color:#fff; border-color:#1a73e8; }
+.btn-danger { background:#d32f2f; color:#fff; border-color:#d32f2f; }
+.btn-sm { font-size:12px; padding:4px 10px; }
+.btn:hover { opacity:.85; }
+.login-box { max-width:360px; margin:80px auto; background:#fff; padding:32px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); text-align:center; }
+.login-box h2 { margin-bottom:20px; }
+.login-box input { width:100%; padding:10px 12px; border:1px solid #d0d0d0; border-radius:8px; font-size:14px; margin-bottom:12px; outline:none; }
+.login-box input:focus { border-color:#1a73e8; }
+.error { color:#d32f2f; font-size:13px; margin-bottom:10px; }
+table { width:100%; background:#fff; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,.06); border-collapse:collapse; font-size:13px; }
+th,td { padding:10px 14px; text-align:left; border-bottom:1px solid #f0f0f0; }
+th { background:#fafafa; font-weight:600; color:#555; }
+.loading { text-align:center; padding:40px; color:#888; }
+.course-row { background:#fff; border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.course-header { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+.course-header:hover { background:#fafafa; }
+.sentence-list { padding:14px; }
+.sentence-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f5f5f5; }
+.dialog-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; z-index:999; }
+.dialog-box { background:#fff; border-radius:12px; padding:24px; width:420px; max-width:90%; }
+.dialog-box h3 { margin-bottom:16px; }
+.dialog-box input { width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-bottom:8px; font-size:14px; }
+.course-form { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.course-form input { padding:6px 10px; border:1px solid #ccc; border-radius:6px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -67,380 +51,185 @@ tr.detail-row td { padding: 0; background: #fafbff; }
   <div v-else class="container">
     <div class="header">
       <h1>Admin Dashboard</h1>
-      <div class="tabs">
-        <button :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">Users</button>
-        <button :class="{ active: activeTab === 'courses' }" @click="activeTab = 'courses'; loadCourses()">Courses</button>
-      </div>
       <button class="btn" @click="doLogout">Logout</button>
+    </div>
+
+    <div class="course-form">
+      <input v-model="newCourseName" placeholder="Course name" />
+      <input v-model="newCourseDesc" placeholder="Description" style="flex:1" />
+      <input v-model="newCoursePrice" type="number" placeholder="Price (0=free)" style="width:100px" min="0" />
+      <button class="btn btn-primary btn-sm" @click="createCourse" :disabled="!newCourseName.trim()">Add Course</button>
     </div>
 
     <div v-if="loading" class="loading">Loading...</div>
 
-    <template v-else>
-      <!-- Course Management -->
-    <div v-if="activeTab === 'courses'" class="courses-panel">
-      <div class="course-form">
-        <input v-model="newCourseName" placeholder="Course name" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px" />
-        <input v-model="newCourseDesc" placeholder="Description (optional)" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px;font-size:13px" />
-        <input v-model="newCoursePrice" type="number" placeholder="Price (0=free)" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px;width:100px;font-size:13px" min="0" />
-        <button class="btn btn-primary btn-sm" @click="createCourse" :disabled="!newCourseName.trim()">Add</button>
+    <div v-for="c in courseList" :key="c.id" class="course-row">
+      <div class="course-header" @click="toggleCourse(c)" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <span style="font-weight:600">{{ c.name }}</span>
+          <span v-if="c.description" style="font-size:12px;color:#888;margin-left:8px">{{ c.description }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;color:#1a73e8;font-weight:600">{{ c.price > 0 ? '$' + c.price : 'Free' }}</span>
+          <span style="font-size:11px;color:#aaa">{{ c.sentenceCount || 0 }} sentences</span>
+          <button class="btn btn-sm" @click.stop="editCourseDialog(c)">Edit</button>
+          <button class="btn btn-sm" @click.stop="translateCourse(c)" :disabled="translatingId === c.id" style="background:#f0f0f0">{{ translatingId === c.id ? '...' : 'T' }}</button>
+          <button class="btn btn-danger btn-sm" @click.stop="deleteCourse(c)">Del</button>
+        </div>
       </div>
-      <div v-for="c in courseList" :key="c.id" style="background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0" @click="toggleCourse(c)">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <span style="font-weight:600">{{ c.name }}</span>
-            <span v-if="c.description" style="font-size:12px;color:#888;margin-left:8px">{{ c.description }}</span>
+      <div v-if="expandedId === c.id" class="sentence-list">
+        <div v-for="s in (c.sentences||[])" :key="s.id" class="sentence-item">
+          <span style="font-size:11px;color:#888;min-width:36px">#{{ s.id }}</span>
+          <div style="flex:1">
+            <input :value="s.title" @change="updateSentence(s,$event.target.value)" style="width:100%;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" placeholder="English" />
+            <input :value="s.translation||''" @change="updateSentenceTrans(s,$event.target.value)" style="width:100%;padding:4px 8px;border:1px solid #eee;border-radius:4px;font-size:12px;color:#666;background:#fafafa;margin-top:3px" placeholder="Chinese" />
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;color:#1a73e8;font-weight:600">{{ c.price > 0 ? '$' + c.price : 'Free' }}</span>
-            <button class="btn btn-sm" @click.stop="editCourseDialog(c)" style="font-size:11px">Edit</button>
-            <button class="btn btn-sm" @click.stop="translateCourse(c)" :disabled="translatingCourseId === c.id" style="font-size:11px;background:#f0f0f0">
-              {{ translatingCourseId === c.id ? '...' : 'Translate' }}
-            </button>
-            <button class="btn btn-danger btn-sm" @click.stop="deleteCourse(c)">Del</button>
-          </div>
+          <button class="btn btn-danger btn-sm" @click="deleteSentence(c,s)">Del</button>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:4px">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide sentences' : 'Show sentences' }}</div>
-        </div>
-        <div v-if="expandedCourseId === c.id" style="padding:14px">
-          <div v-if="c.sentences && c.sentences.length > 0">
-            <div style="padding:14px;color:#888;font-size:13px">Sentences: {{ c.sentenceCount || 0 }}</div><div v-if="false" v-for="s in []" style="display:none">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                <span style="font-size:11px;color:#888;min-width:36px">#{{ s.id }}</span>
-                <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" placeholder="English" />
-                <button class="btn btn-danger btn-sm" @click="deleteSentence(c, s)">Del</button>
-              </div>
-              <div style="display:flex;gap:8px;padding-left:44px">
-                <input :value="s.translation || ''" @change="updateSentenceTrans(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #eee;border-radius:4px;font-size:12px;color:#666;background:#fafafa" placeholder="Chinese translation" />
-              </div>
-            </div>
+        <div v-if="!c.sentences || c.sentences.length===0" style="color:#aaa;font-size:12px;padding:8px 0">No sentences</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+            <input v-model="newSentText[c.id]" placeholder="English sentence" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px" @keyup.enter="addSentence(c)" />
+            <input v-model="newSentTrans[c.id]" placeholder="Chinese (optional)" style="padding:6px 10px;border:1px solid #eee;border-radius:6px;font-size:12px;color:#888" />
           </div>
-          <div v-else style="color:#aaa;font-size:12px">No sentences</div>
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-                <input v-model="newSentenceText[c.id]" placeholder="English sentence" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px" @keyup.enter="addSentence(c)" />
-                <input v-model="newSentenceTrans[c.id]" placeholder="Chinese translation (optional)" style="padding:6px 10px;border:1px solid #eee;border-radius:6px;font-size:12px;color:#888" />
-              </div>
-            <button class="btn btn-primary btn-sm" @click="addSentence(c)">Add</button>
-          </div>
+          <button class="btn btn-primary btn-sm" @click="addSentence(c)">Add</button>
         </div>
       </div>
     </div>
 
-    <div v-if="activeTab === 'users'" class="stats-row">
-        <div class="stat-card"><div class="num">{{ users.length }}</div><div class="label">Users</div></div>
-        <div class="stat-card"><div class="num">{{ totalSessions }}</div><div class="label">Sessions</div></div>
-        <div class="stat-card"><div class="num">{{ formatTime(totalTime) }}</div><div class="label">Total Time</div></div>
-        <div class="stat-card"><div class="num">{{ totalLogins }}</div><div class="label">Logins</div></div>
+    <!-- Edit Dialog -->
+    <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog=false">
+      <div class="dialog-box">
+        <h3>Edit Course</h3>
+        <input v-model="editName" placeholder="Name" />
+        <input v-model="editDesc" placeholder="Description" />
+        <input v-model="editPrice" type="number" placeholder="Price" min="0" />
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn" @click="showEditDialog=false">Cancel</button>
+          <button class="btn btn-primary" @click="saveCourseEdit">Save</button>
+        </div>
       </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width:24px"></th>
-            <th>Email</th><th>Progress</th>
-            <th>Status</th>
-            <th>Registered</th>
-            <th>Sessions</th>
-            <th>Time</th>
-            <th>Wrong</th>
-            <th>Logins</th><th>Last IP</th><th>Online</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <template v-for="u in users" :key="u.id">
-            <tr class="user-row" :class="{ expanded: expandedId === u.id }" @click="toggleDetail(u)">
-              <td style="text-align:center">{{ expandedId === u.id ? '&#9660;' : '&#9654;' }}</td>
-              <td>{{ u.email }}</td>
-            <td style="font-size:12px">
-              <span v-if="u.progress && u.progress.sentences" style="color:#2d6a4f">
-                {{ u.progress.currentIndex + 1 }}/{{ u.progress.sentences.length }}
-                <span style="color:#888;font-size:10px">({{ u.progress.category || "all" }})</span>
-              </span>
-              <span v-else style="color:#ccc">-</span>
-            </td>
-              <td><span :class="u.verified ? 'verified' : 'unverified'">{{ u.verified ? 'Verified' : 'Pending' }}</span></td>
-              <td>{{ formatDate(u.created_at) }}</td>
-              <td>{{ u.totalSessions }}</td>
-              <td>{{ formatTime(u.totalTimeSeconds) }}</td>
-              <td>{{ u.wrongCount }}</td>
-              <td>{{ u.loginCount || 0 }}</td>
-            <td style="font-size:11px;font-family:monospace">{{ u.latestIp || '-' }}</td>
-            <td><span :class="isOnline(u) ? 'tag-online' : ''" style="font-size:11px">{{ isOnline(u) ? 'Online' : 'Offline' }}</span></td>
-              <td><button class="btn btn-danger btn-sm" @click.stop="deleteUser(u)">Del</button></td>
-            </tr>
-            <tr v-if="expandedId === u.id" class="detail-row">
-              <td colspan="11">
-                <div class="detail-panel">
-                  <div v-if="detailLoading">Loading details...</div>
-                  <template v-else-if="userDetail">
-                    <h3><span class="tag tag-login">Login History</span> ({{ userDetail.loginLogs.length }})</h3>
-                    <div v-if="userDetail.loginLogs.length === 0" class="no-data">No login records</div>
-                    <table v-else class="detail-table">
-                      <thead><tr><th>#</th><th>Time</th><th>IP</th><th>Browser</th></tr></thead>
-                      <tbody>
-                        <tr v-for="(l, i) in userDetail.loginLogs.slice(0, 20)" :key="i">
-                          <td>{{ i + 1 }}</td>
-                          <td>{{ formatDateTime(l.time) }}</td>
-                          <td style="font-size:11px;font-family:monospace">{{ l.ip || '-' }}</td>
-                          <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ (l.user_agent || '').substring(0, 40) }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <h3><span class="tag tag-session">Practice Sessions</span> ({{ userDetail.sessions.length }})</h3>
-                    <div v-if="userDetail.sessions.length === 0" class="no-data">No practice sessions</div>
-                    <table v-else class="detail-table">
-                      <thead><tr><th>#</th><th>Started</th><th>Ended</th><th>Duration</th><th>Sentences</th></tr></thead>
-                      <tbody>
-                        <tr v-for="(s, i) in userDetail.sessions.slice(0, 20)" :key="i">
-                          <td>{{ i + 1 }}</td>
-                          <td>{{ formatDateTime(s.started_at) }}</td>
-                          <td>{{ formatDateTime(s.ended_at) }}</td>
-                          <td>{{ formatTime(s.duration_seconds) }}</td>
-                          <td>{{ s.sentences_practiced }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <h3><span class="tag tag-wrong">Wrong Sentences</span> ({{ userDetail.wrongSentences.length }})</h3>
-                    <div v-if="userDetail.wrongSentences.length === 0" class="no-data">No wrong sentences</div>
-                    <table v-else class="detail-table">
-                      <thead><tr><th>#</th><th>Sentence</th><th>Recorded</th></tr></thead>
-                      <tbody>
-                        <tr v-for="(w, i) in userDetail.wrongSentences.slice(0, 30)" :key="i">
-                          <td>{{ i + 1 }}</td>
-                          <td>{{ w.sentence_en }}</td>
-                          <td>{{ formatDateTime(w.recorded_at) }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </template>
-                </div>
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </template>
+    </div>
   </div>
 </div>
 
 <script>
-const { createApp, ref, computed } = Vue;
-const API = (window.location.hostname === "localhost") ? "http://localhost:3001/api" : "/api";
-
+const { createApp, ref, reactive } = Vue;
 createApp({
   setup() {
     const loggedIn = ref(!!localStorage.getItem("admin_token"));
-    const password = ref("");
-    const error = ref("");
-    const loading = ref(false);
-    const users = ref([]);
-    const activeTab = ref("courses");
-    const courseList = ref([]);
-    const newCourseName = ref("");
-    const newCourseDesc = ref("");
-    const newCoursePrice = ref(0);
-    const expandedCourseId = ref(null);
-    // courseSentences removed - using c.sentences directly
-    const newSentenceText = ref({});
-    const newSentenceTrans = ref({});
-    const showEditDialog = ref(false);
-    const editingCourse = ref(null);
-    const editCourseName = ref("");
-    const editCourseDesc = ref("");
-    const editCoursePrice = ref(0);
-    const translatingCourseId = ref(null);
-    const expandedId = ref(null);
-    const userDetail = ref(null);
-    const detailLoading = ref(false);
-
-    const totalSessions = computed(() => users.value.reduce((s, u) => s + u.totalSessions, 0));
-    const totalTime = computed(() => users.value.reduce((s, u) => s + u.totalTimeSeconds, 0));
-    const totalLogins = computed(() => users.value.reduce((s, u) => s + (u.loginCount || 0), 0));
+    const password = ref(""); const error = ref(""); const loading = ref(false);
+    const courseList = ref([]); const expandedId = ref(null);
+    const newCourseName = ref(""); const newCourseDesc = ref(""); const newCoursePrice = ref(0);
+    const showEditDialog = ref(false); const editName = ref(""); const editDesc = ref(""); const editPrice = ref(0);
+    const editingCourse = ref(null); const translatingId = ref(null);
+    const newSentText = ref({}); const newSentTrans = ref({});
 
     async function doLogin() {
       error.value = "";
-      const res = await fetch(API + "/admin/login", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: password.value }),
-      });
+      const res = await fetch(API + "/admin/login", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({password:password.value}) });
       const data = await res.json();
       if (!res.ok) { error.value = data.error; return; }
       localStorage.setItem("admin_token", data.token);
-      loggedIn.value = true;
-      loadUsers();
+      loggedIn.value = true; loadCourses();
     }
-
     function doLogout() { localStorage.removeItem("admin_token"); loggedIn.value = false; }
 
     async function loadCourses() {
+      loading.value = true;
       try {
         const res = await fetch(API + "/courses");
         courseList.value = await res.json();
-        // Initialize empty sentences arrays
-        const init = {};
-        courseList.value.forEach(c => { init[c.id] = []; });
-        courseList.value.forEach(c => { c.sentences = []; });
-        // Load sentence counts
+        courseList.value.forEach(c => { c.sentences = []; c.sentenceCount = 0; });
         for (const c of courseList.value) {
           try {
             const sr = await fetch(API + "/courses/" + c.id + "/sentences");
-            const sents = await sr.json();
-            c.sentenceCount = sents.length; c.sentences = c.sentences || [];
-          } catch(e) { c.sentenceCount = 0; }
+            c.sentences = await sr.json();
+            c.sentenceCount = c.sentences.length;
+          } catch(e) {}
         }
       } catch(e) {}
-    }
-    async function translateCourse(c) {
-      if (!confirm("Auto-translate missing Chinese translations for \"" + c.name + "\"?")) return;
-      translatingCourseId.value = c.id;
-      try {
-        const token = localStorage.getItem("admin_token");
-        const res = await fetch(API + "/admin/courses/" + c.id + "/translate", { method: "POST", headers: { Authorization: "Bearer " + token } });
-        const result = await res.json();
-        alert("Translated " + result.translated + " / " + result.total + " sentences");
-        await loadCourseSentences(c.id);
-      } catch(e) { alert("Translation failed"); }
-      translatingCourseId.value = null;
-    }
-    async function toggleCourse(c) {
-      if (expandedCourseId.value === c.id) { expandedCourseId.value = null; return; }
-      if (!c.sentences) {
-        courseSentences.value = { ...courseSentences.value, [c.id]: [] };
-      }
-      await loadCourseSentences(c.id);
-      expandedCourseId.value = c.id;
-    }
-    async function loadCourseSentences(cid) {
-      try {
-        const token = localStorage.getItem("admin_token");
-        const res = await fetch(API + "/courses/" + cid + "/sentences");
-        const data = await res.json();
-        const course = courseList.value.find(c => c.id == cid); if (course) course.sentences = data;
-      } catch(e) {}
-    }
-    async function addSentence(c) {
-      const text = (newSentenceText.value[c.id] || "").trim();
-      if (!text) return;
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses/" + c.id + "/sentences", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: text, translation: newSentenceTrans.value[c.id] || "", degree: 1, category: "basic" }) });
-      newSentenceText.value[c.id] = "";
-      newSentenceTrans.value[c.id] = "";
-      c.sentenceCount = (c.sentenceCount || 0) + 1;
-      await loadCourseSentences(c.id);
-    }
-    async function updateSentenceTrans(s, newTrans) {
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: s.title, translation: newTrans }) });
-      s.translation = newTrans;
-    }
-    async function updateSentence(s, newTitle) {
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: newTitle, translation: s.translation || "" }) });
-      s.title = newTitle;
-    }
-    async function deleteSentence(c, s) {
-      if (!confirm("Delete this sentence?")) return;
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/sentences/" + s.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
-      c.sentenceCount = Math.max(0, (c.sentenceCount || 0) - 1);
-      const arr = c.sentences || [];
-      const list = arr.filter(x => x.id !== s.id);
-      courseSentences.value = { ...courseSentences.value, [c.id]: list };
-    }
-    async function createCourse() {
-      if (!newCourseName.value.trim()) return;
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: newCourseName.value.trim(), description: newCourseDesc.value.trim(), price: newCoursePrice.value || 0 }) });
-      newCourseName.value = "";
-      newCourseDesc.value = "";
-      newCoursePrice.value = 0;
-      await loadCourses();
-    }
-    async function editCourseDialog(c) {
-      editingCourse.value = c;
-      editCourseName.value = c.name;
-      editCourseDesc.value = c.description || "";
-      editCoursePrice.value = c.price || 0;
-      showEditDialog.value = true;
-    }
-    async function saveCourseEdit() {
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses/" + editingCourse.value.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: editCourseName.value, description: editCourseDesc.value, price: editCoursePrice.value || 0 }) });
-      editingCourse.value.name = editCourseName.value;
-      editingCourse.value.description = editCourseDesc.value;
-      editingCourse.value.price = editCoursePrice.value;
-      showEditDialog.value = false;
-    }
-    async function deleteCourse(c) {
-      if (!confirm("Delete course \"" + c.name + "\" and all its sentences?")) return;
-      const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses/" + c.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
-      await loadCourses();
-    }
-    async function loadUsers() {
-      loading.value = true;
-      try {
-        const res = await fetch(API + "/admin/users", {
-          headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") },
-        });
-        users.value = await res.json();
-        // Add latest IP for each user from login logs
-        users.value = users.value.map(u => {
-          // IP will be fetched on detail expand, just set placeholder
-          return u;
-        });
-      } catch(e) { error.value = "Failed to load"; }
       loading.value = false;
     }
 
-    async function toggleDetail(u) {
-      if (expandedId.value === u.id) { expandedId.value = null; userDetail.value = null; return; }
-      expandedId.value = u.id;
-      detailLoading.value = true;
-      userDetail.value = null;
+    async function createCourse() {
+      if (!newCourseName.value.trim()) return;
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/courses", { method:"POST", headers:{"Content-Type":"application/json",Authorization:"Bearer "+t}, body:JSON.stringify({name:newCourseName.value.trim(),description:newCourseDesc.value.trim(),price:newCoursePrice.value||0}) });
+      newCourseName.value = ""; newCourseDesc.value = ""; newCoursePrice.value = 0;
+      await loadCourses();
+    }
+
+    async function toggleCourse(c) {
+      expandedId.value = expandedId.value === c.id ? null : c.id;
+    }
+
+    async function editCourseDialog(c) {
+      editingCourse.value = c; editName.value = c.name; editDesc.value = c.description||""; editPrice.value = c.price||0;
+      showEditDialog.value = true;
+    }
+
+    async function saveCourseEdit() {
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/courses/"+editingCourse.value.id, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:"Bearer "+t}, body:JSON.stringify({name:editName.value,description:editDesc.value,price:editPrice.value||0}) });
+      editingCourse.value.name = editName.value; editingCourse.value.description = editDesc.value; editingCourse.value.price = editPrice.value;
+      showEditDialog.value = false;
+    }
+
+    async function deleteCourse(c) {
+      if (!confirm("Delete "+c.name+" and all sentences?")) return;
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/courses/"+c.id, { method:"DELETE", headers:{Authorization:"Bearer "+t} });
+      await loadCourses();
+    }
+
+    async function translateCourse(c) {
+      if (!confirm("Auto-translate missing translations?")) return;
+      translatingId.value = c.id;
       try {
-        const res = await fetch(API + "/admin/users/" + u.id + "/detail", {
-          headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") },
-        });
-        userDetail.value = await res.json();
-      } catch(e) {}
-      detailLoading.value = false;
+        const t = localStorage.getItem("admin_token");
+        const res = await fetch(API + "/admin/courses/"+c.id+"/translate", { method:"POST", headers:{Authorization:"Bearer "+t} });
+        const r = await res.json();
+        alert("Translated "+r.translated+" / "+r.total);
+        const sr = await fetch(API + "/courses/"+c.id+"/sentences");
+        c.sentences = await sr.json();
+        c.sentenceCount = c.sentences.length;
+      } catch(e) { alert("Translation failed"); }
+      translatingId.value = null;
     }
 
-    async function deleteUser(u) {
-      if (!confirm("Delete " + u.email + " and all data?")) return;
-      await fetch(API + "/admin/users/" + u.id, {
-        method: "DELETE",
-        headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") },
-      });
-      if (expandedId.value === u.id) { expandedId.value = null; userDetail.value = null; }
-      users.value = users.value.filter(x => x.id !== u.id);
+    async function addSentence(c) {
+      const text = (newSentText.value[c.id]||"").trim();
+      if (!text) return;
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/courses/"+c.id+"/sentences", { method:"POST", headers:{"Content-Type":"application/json",Authorization:"Bearer "+t}, body:JSON.stringify({title:text,translation:newSentTrans.value[c.id]||"",degree:1,category:"basic"}) });
+      newSentText.value[c.id] = ""; newSentTrans.value[c.id] = ""; c.sentenceCount = (c.sentenceCount||0)+1;
+      const sr = await fetch(API + "/courses/"+c.id+"/sentences");
+      c.sentences = await sr.json();
     }
 
-    function formatTime(s) {
-      if (!s) return "0m";
-      const m = Math.floor(s / 60);
-      const h = Math.floor(m / 60);
-      if (h > 0) return h + "h " + (m % 60) + "m";
-      return m + "m " + (s % 60) + "s";
+    async function updateSentence(s, v) {
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/"+s.id, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:"Bearer "+t}, body:JSON.stringify({title:v,translation:s.translation||""}) });
+      s.title = v;
     }
 
-    function formatDate(d) { if (!d) return "-"; return new Date(d).toLocaleDateString("zh-CN"); }
-    function formatDateTime(d) { if (!d) return "-"; return new Date(d).toLocaleString("zh-CN"); }
-
-    function isOnline(u) {
-      if (!u.latestLoginTime) return false;
-      const lastLogin = new Date(u.latestLoginTime).getTime();
-      return Date.now() - lastLogin < 10 * 60 * 1000;
+    async function updateSentenceTrans(s, v) {
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/"+s.id, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:"Bearer "+t}, body:JSON.stringify({title:s.title,translation:v}) });
+      s.translation = v;
     }
-    if (loggedIn.value) { loadUsers(); loadCourses(); }
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourseDialog, saveCourseEdit, deleteCourse, loadCourses, showEditDialog, editCourseName, editCourseDesc, editCoursePrice, editCourseDialog, saveCourseEdit, expandedCourseId, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
+    async function deleteSentence(c, s) {
+      if (!confirm("Delete this sentence?")) return;
+      const t = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/"+s.id, { method:"DELETE", headers:{Authorization:"Bearer "+t} });
+      c.sentences = c.sentences.filter(x => x.id !== s.id); c.sentenceCount = c.sentences.length;
+    }
+
+    if (loggedIn.value) loadCourses();
+
+    return { loggedIn,password,error,loading,courseList,expandedId,newCourseName,newCourseDesc,newCoursePrice,showEditDialog,editName,editDesc,editPrice,translatingId,newSentText,newSentTrans,doLogin,doLogout,createCourse,toggleCourse,editCourseDialog,saveCourseEdit,deleteCourse,translateCourse,addSentence,updateSentence,updateSentenceTrans,deleteSentence };
   }
 }).mount("#app");
 </script>
