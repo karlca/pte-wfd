@@ -221,8 +221,11 @@ const hiddenInput = ref(null);
 const blanksContainer = ref(null);
 
 async function fetchCourses() {
-  try { courses.value = await getCourses(); }
-  catch(e) { console.error('Failed to load courses:', e); }
+  try {
+    const list = await getCourses();
+    console.log('[PTE] fetchCourses got', list.length, 'courses:', list.map(c => c.name));
+    courses.value = list;
+  } catch(e) { console.error('[PTE] Failed to load courses:', e); }
 }
 
 async function startWithCourse(courseId) {
