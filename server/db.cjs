@@ -11,6 +11,7 @@ let usePg = false;
 async function init() {
   if (DATABASE_URL) {
     pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, verified BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS practice_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, started_at TIMESTAMPTZ, ended_at TIMESTAMPTZ, duration_seconds INTEGER DEFAULT 0, sentences_practiced INTEGER DEFAULT 0);
@@ -52,7 +53,8 @@ module.exports = {
     const data = readJson(); data.users.push(user); writeJson(data);
   },
   async updateUser(email, updates) {
-    if (usePg) { const sets = Object.keys(updates).map((k,i) => `${k}=$${i+2}`).join(","); await pool.query(`UPDATE users SET ${sets} WHERE email=$1`, [email, ...Object.values(updates)]); return; }
+    if (usePg) { const sets = Object.keys(updates).map((k,i) => `${k}=$${i+2}`).join(","); await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;`);
+    await pool.query(`UPDATE users SET ${sets} WHERE email=$1`, [email, ...Object.values(updates)]); return; }
     const data = readJson(); const idx = data.users.findIndex(u => u.email === email); if (idx >= 0) { Object.assign(data.users[idx], updates); writeJson(data); }
   },
   async saveSession(session) {
@@ -71,9 +73,9 @@ module.exports = {
     if (usePg) { const r = await pool.query("SELECT COALESCE(SUM(duration_seconds),0) as total_time, COUNT(*) as sessions FROM practice_sessions WHERE user_id=$1", [userId]); const w = await pool.query("SELECT COUNT(DISTINCT sentence_en) as wrong FROM wrong_sentences WHERE user_id=$1", [userId]); return { totalTimeSeconds: parseInt(r.rows[0].total_time), totalSessions: parseInt(r.rows[0].sessions), wrongSentencesCount: parseInt(w.rows[0].wrong) }; }
     const data = readJson(); const ss = data.sessions.filter(s => s.user_id === userId); return { totalTimeSeconds: ss.reduce((sum, s) => sum + (s.duration_seconds || 0), 0), totalSessions: ss.length, wrongSentencesCount: data.wrongSentences.filter(w => w.user_id === userId).length };
   },
-  async recordLogin(userId) {
-    if (usePg) { await pool.query("INSERT INTO login_logs (user_id, time) VALUES ($1,$2)", [userId, new Date().toISOString()]); return; }
-    const data = readJson(); data.loginLogs = data.loginLogs || []; data.loginLogs.push({ user_id: userId, time: new Date().toISOString() }); writeJson(data);
+  async recordLogin(userId, extra = {}) {
+    if (usePg) { await pool.query("INSERT INTO login_logs (user_id, time, ip, user_agent, location) VALUES ($1,$2,$3,$4,$5)", [userId, new Date().toISOString(), extra.ip || null, extra.userAgent || null, extra.location || null]); return; }
+    const data = readJson(); data.loginLogs = data.loginLogs || []; data.loginLogs.push({ user_id: userId, time: new Date().toISOString(), ip: extra.ip, user_agent: extra.userAgent, location: extra.location }); writeJson(data);
   },
   async listAllUsers() {
     if (usePg) { const r = await pool.query("SELECT u.*, COALESCE(s.sessions,0) as total_sessions, COALESCE(s.total_time,0) as total_time_seconds, COALESCE(w.wrong_count,0) as wrong_count, COALESCE(l.login_count,0) as login_count FROM users u LEFT JOIN (SELECT user_id, COUNT(*) as sessions, COALESCE(SUM(duration_seconds),0) as total_time FROM practice_sessions GROUP BY user_id) s ON u.id=s.user_id LEFT JOIN (SELECT user_id, COUNT(DISTINCT sentence_en) as wrong_count FROM wrong_sentences GROUP BY user_id) w ON u.id=w.user_id LEFT JOIN (SELECT user_id, COUNT(*) as login_count FROM login_logs GROUP BY user_id) l ON u.id=l.user_id ORDER BY u.created_at DESC"); const states = await pool.query("SELECT user_id, state FROM practice_state");
