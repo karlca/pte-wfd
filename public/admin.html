@@ -44,6 +44,7 @@ tr.detail-row td { padding: 0; background: #fafbff; }
 .tag-login { background: #e3f2fd; color: #1565c0; }
 .tag-session { background: #e8f5e9; color: #2e7d32; }
 .tag-wrong { background: #fce4ec; color: #c62828; }
+.tag-online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4caf50; margin-right: 4px; }
 .loading { text-align: center; padding: 40px; color: #888; }
 .no-data { color: #aaa; font-size: 12px; padding: 8px 0; }
 </style>
@@ -83,7 +84,7 @@ tr.detail-row td { padding: 0; background: #fafbff; }
             <th>Sessions</th>
             <th>Time</th>
             <th>Wrong</th>
-            <th>Logins</th>
+            <th>Logins</th><th>Last IP</th><th>Online</th>
             <th></th>
           </tr>
         </thead>
@@ -105,21 +106,25 @@ tr.detail-row td { padding: 0; background: #fafbff; }
               <td>{{ formatTime(u.totalTimeSeconds) }}</td>
               <td>{{ u.wrongCount }}</td>
               <td>{{ u.loginCount || 0 }}</td>
+            <td style="font-size:11px;font-family:monospace">{{ u.latestIp || '-' }}</td>
+            <td><span :class="isOnline(u) ? 'tag-online' : ''" style="font-size:11px">{{ isOnline(u) ? 'Online' : 'Offline' }}</span></td>
               <td><button class="btn btn-danger btn-sm" @click.stop="deleteUser(u)">Del</button></td>
             </tr>
             <tr v-if="expandedId === u.id" class="detail-row">
-              <td colspan="10">
+              <td colspan="11">
                 <div class="detail-panel">
                   <div v-if="detailLoading">Loading details...</div>
                   <template v-else-if="userDetail">
                     <h3><span class="tag tag-login">Login History</span> ({{ userDetail.loginLogs.length }})</h3>
                     <div v-if="userDetail.loginLogs.length === 0" class="no-data">No login records</div>
                     <table v-else class="detail-table">
-                      <thead><tr><th>#</th><th>Time</th></tr></thead>
+                      <thead><tr><th>#</th><th>Time</th><th>IP</th><th>Browser</th></tr></thead>
                       <tbody>
                         <tr v-for="(l, i) in userDetail.loginLogs.slice(0, 20)" :key="i">
                           <td>{{ i + 1 }}</td>
                           <td>{{ formatDateTime(l.time) }}</td>
+                          <td style="font-size:11px;font-family:monospace">{{ l.ip || '-' }}</td>
+                          <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ (l.user_agent || '').substring(0, 40) }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -203,6 +208,11 @@ createApp({
           headers: { Authorization: "Bearer " + localStorage.getItem("admin_token") },
         });
         users.value = await res.json();
+        // Add latest IP for each user from login logs
+        users.value = users.value.map(u => {
+          // IP will be fetched on detail expand, just set placeholder
+          return u;
+        });
       } catch(e) { error.value = "Failed to load"; }
       loading.value = false;
     }
@@ -242,9 +252,14 @@ createApp({
     function formatDate(d) { if (!d) return "-"; return new Date(d).toLocaleDateString("zh-CN"); }
     function formatDateTime(d) { if (!d) return "-"; return new Date(d).toLocaleString("zh-CN"); }
 
+    function isOnline(u) {
+      if (!u.latestLoginTime) return false;
+      const lastLogin = new Date(u.latestLoginTime).getTime();
+      return Date.now() - lastLogin < 10 * 60 * 1000;
+    }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline };
   }
 }).mount("#app");
 </script>
