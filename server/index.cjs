@@ -141,6 +141,43 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-db.init().then(() => {
+async function seedCourses() {
+  const existing = await db.listCourses();
+  if (existing.length > 0) { console.log("Courses exist, skip seed"); return; }
+  console.log("Seeding courses from sentences.js...");
+  try {
+    const seedPath = path.join(__dirname, "..", "src", "data", "sentences.js");
+    const raw = fs.readFileSync(seedPath, "utf-8");
+    // Extract the array content
+    const match = raw.match(/export const wfdSentences = \[([\s\S]*)\];/);
+    if (!match) return console.log("No sentences found");
+    // Create courses
+    const courseMap = {};
+    const categories = { "basic": "基础", "jj": "高频", "weekly": "周预测" };
+    for (const [key, name] of Object.entries(categories)) {
+      const c = await db.createCourse({ name, description: "" });
+      courseMap[key] = c.id;
+    }
+    // Parse sentences and insert
+    const entries = match[1].match(/\{[^}]+\}/g);
+    if (!entries) return;
+    let count = 0;
+    for (const entry of entries) {
+      const catMatch = entry.match(/category:\s*"(\w+)"/);
+      const enMatch = entry.match(/en:\s*"([^"]*)"/);
+      const zhMatch = entry.match(/zh:\s*"([^"]*)"/);
+      if (!catMatch || !enMatch) continue;
+      const cat = catMatch[1];
+      const cid = courseMap[cat];
+      if (!cid) continue;
+      await db.addSentence({ course_id: cid, title: enMatch[1], translation: zhMatch ? zhMatch[1] : "", category: cat, degree: 1 });
+      count++;
+    }
+    console.log("Seeded " + count + " sentences into 3 courses");
+  } catch (e) { console.error("Seed error:", e.message); }
+}
+
+db.init().then(async () => {
+  await seedCourses();
     app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
 });
