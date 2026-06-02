@@ -266,8 +266,7 @@ onMounted(() => {
     // no default sentences, user selects course
   }
   function loadVoices() {
-    const voices = trackVisit();
-  speechSynthesis.getVoices();
+    const voices = speechSynthesis.getVoices();
     if (voices.length > 0) {
       availableVoices.value = voices.filter(v => v.lang.startsWith("en")).map(v => ({ name: v.name, lang: v.lang }));
     }
@@ -591,8 +590,7 @@ function restart() {
 let preferredVoice = null;
 function getBestVoice() {
   if (preferredVoice) return preferredVoice;
-  const voices = trackVisit();
-  speechSynthesis.getVoices();
+  const voices = speechSynthesis.getVoices();
   if (voices.length === 0) return null;
   // Priority: native en-US voices with highest quality
   const ranked = voices.filter(v => v.lang.startsWith("en"));
@@ -676,8 +674,7 @@ function playAudio() {
   if (!currentText.value || isPlaying.value) return;
   speechSynthesis.cancel();
 
-  const voices = trackVisit();
-  speechSynthesis.getVoices();
+  const voices = speechSynthesis.getVoices();
   if (voices.length === 0) {
     speechSynthesis.onvoiceschanged = () => {
       speechSynthesis.onvoiceschanged = null;
@@ -688,8 +685,7 @@ function playAudio() {
 
   let voice;
   if (selectedVoiceName.value) {
-    const voices = trackVisit();
-  speechSynthesis.getVoices();
+    const voices = speechSynthesis.getVoices();
     voice = voices.find(v => v.name === selectedVoiceName.value) || getBestVoice();
   } else {
     voice = getBestVoice();
