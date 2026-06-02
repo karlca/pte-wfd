@@ -259,7 +259,7 @@ function startPractice(list) {
 
 onMounted(() => {
   if (isLoggedIn()) {
-    startPractice(wfdSentences);
+    // no default sentences, user selects course
   }
   function loadVoices() {
     const voices = speechSynthesis.getVoices();
@@ -464,7 +464,7 @@ async function switchMode(mode) {
     wrongSentencesList.value = list;
     if (list.length === 0) return;
     // Find matching sentence objects
-    const matched = wfdSentences.filter(s => list.includes(s.en));
+    const matched = (sentences.value.length > 0 ? sentences.value : []).filter(s => list.includes(s.en));
     if (matched.length === 0) return;
     practiceMode.value = mode;
     if (timerInterval) clearInterval(timerInterval);
@@ -472,7 +472,7 @@ async function switchMode(mode) {
   } else {
     practiceMode.value = mode;
     if (timerInterval) clearInterval(timerInterval);
-    startPractice(wfdSentences);
+    // no default sentences, user selects course
   }
 }
 
@@ -518,11 +518,8 @@ function resumePractice() {
   const state = savedStateData.value;
   // Restore sentence order by ID
   if (state.sentenceIds && state.sentenceIds.length > 0) {
-    const lookup = {};
-    wfdSentences.forEach(s => { lookup[s.id] = s; });
-    const restored = state.sentenceIds.map(id => lookup[id]).filter(Boolean);
-    if (restored.length > 0) sentences.value = restored;
-    else sentences.value = state.sentenceIds; // fallback for old format
+    if (state.sentences && state.sentences.length > 0) sentences.value = state.sentences;
+    else if (state.sentenceIds && state.sentenceIds.length > 0) sentences.value = state.sentenceIds; // fallback for old format
   } else if (state.sentences && state.sentences.length > 0) {
     sentences.value = state.sentences; // old format fallback
   } else {
@@ -574,11 +571,12 @@ function restart() {
   finishSession();
   wrongSentencesSet.value = new Set();
   if (practiceMode.value === "wrong" && wrongSentencesList.value.length > 0) {
-    const matched = wfdSentences.filter(s => wrongSentencesList.value.includes(s.en));
-    startPractice(matched.length > 0 ? matched : wfdSentences);
+    const currentSents = sentences.value.length > 0 ? sentences.value : [];
+    const matched = currentSents.filter(s => wrongSentencesList.value.includes(s.en));
+    startPractice(matched.length > 0 ? matched : currentSents);
   } else {
     practiceMode.value = "all";
-    startPractice(wfdSentences);
+    // no default sentences, user selects course
   }
   showReference.value = false;
   clearState();
