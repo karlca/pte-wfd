@@ -307,6 +307,7 @@ createApp({
       if (expandedCourseId.value === c.id) { expandedCourseId.value = null; return; }
       await loadCourseSentences(c.id);
       expandedCourseId.value = c.id;
+    }
     async function loadCourseSentences(cid) {
       try {
         const token = localStorage.getItem("admin_token");
