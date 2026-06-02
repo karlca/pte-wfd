@@ -81,19 +81,27 @@ tr.detail-row td { padding: 0; background: #fafbff; }
     <div v-if="activeTab === 'courses'" class="courses-panel">
       <div class="course-form">
         <input v-model="newCourseName" placeholder="Course name" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px" />
+        <input v-model="newCourseDesc" placeholder="Description (optional)" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px;font-size:13px" />
+        <input v-model="newCoursePrice" type="number" placeholder="Price (0=free)" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px;width:100px;font-size:13px" min="0" />
         <button class="btn btn-primary btn-sm" @click="createCourse" :disabled="!newCourseName.trim()">Add</button>
       </div>
       <div v-for="c in courseList" :key="c.id" style="background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid #f0f0f0" @click="toggleCourse(c)">
-          <span style="font-weight:600">{{ c.name }}</span>
-          <button class="btn btn-sm" @click.stop="translateCourse(c)" :disabled="translatingCourseId === c.id" style="font-size:11px;background:#f0f0f0">
-            {{ translatingCourseId === c.id ? 'Translating...' : 'Translate' }}
-          </button>
-          <span style="font-size:12px;color:#888">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide' : 'Show' }}</span>
+        <div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0" @click="toggleCourse(c)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
-            <button class="btn btn-sm" @click.stop="editCourse(c)">Edit</button>
+            <span style="font-weight:600">{{ c.name }}</span>
+            <span v-if="c.description" style="font-size:12px;color:#888;margin-left:8px">{{ c.description }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;color:#1a73e8;font-weight:600">{{ c.price > 0 ? '$' + c.price : 'Free' }}</span>
+            <button class="btn btn-sm" @click.stop="editCourseDialog(c)" style="font-size:11px">Edit</button>
+            <button class="btn btn-sm" @click.stop="translateCourse(c)" :disabled="translatingCourseId === c.id" style="font-size:11px;background:#f0f0f0">
+              {{ translatingCourseId === c.id ? '...' : 'Translate' }}
+            </button>
             <button class="btn btn-danger btn-sm" @click.stop="deleteCourse(c)">Del</button>
           </div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide sentences' : 'Show sentences' }}</div>
         </div>
         <div v-if="expandedCourseId === c.id" style="padding:14px">
           <div v-if="courseSentences[c.id] && courseSentences[c.id].length > 0">
@@ -234,10 +242,17 @@ createApp({
     const activeTab = ref("users");
     const courseList = ref([]);
     const newCourseName = ref("");
+    const newCourseDesc = ref("");
+    const newCoursePrice = ref(0);
     const expandedCourseId = ref(null);
     const courseSentences = ref({});
     const newSentenceText = ref({});
     const newSentenceTrans = ref({});
+    const showEditDialog = ref(false);
+    const editingCourse = ref(null);
+    const editCourseName = ref("");
+    const editCourseDesc = ref("");
+    const editCoursePrice = ref(0);
     const translatingCourseId = ref(null);
     const expandedId = ref(null);
     const userDetail = ref(null);
@@ -330,16 +345,26 @@ createApp({
     async function createCourse() {
       if (!newCourseName.value.trim()) return;
       const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: newCourseName.value.trim(), description: "" }) });
+      await fetch(API + "/admin/courses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: newCourseName.value.trim(), description: newCourseDesc.value.trim(), price: newCoursePrice.value || 0 }) });
       newCourseName.value = "";
+      newCourseDesc.value = "";
+      newCoursePrice.value = 0;
       await loadCourses();
     }
-    async function editCourse(c) {
-      const name = prompt("New course name:", c.name);
-      if (!name) return;
+    async function editCourseDialog(c) {
+      editingCourse.value = c;
+      editCourseName.value = c.name;
+      editCourseDesc.value = c.description || "";
+      editCoursePrice.value = c.price || 0;
+      showEditDialog.value = true;
+    }
+    async function saveCourseEdit() {
       const token = localStorage.getItem("admin_token");
-      await fetch(API + "/admin/courses/" + c.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name, description: "" }) });
-      await loadCourses();
+      await fetch(API + "/admin/courses/" + editingCourse.value.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: editCourseName.value, description: editCourseDesc.value, price: editCoursePrice.value || 0 }) });
+      editingCourse.value.name = editCourseName.value;
+      editingCourse.value.description = editCourseDesc.value;
+      editingCourse.value.price = editCoursePrice.value;
+      showEditDialog.value = false;
     }
     async function deleteCourse(c) {
       if (!confirm("Delete course \"" + c.name + "\" and all its sentences?")) return;
@@ -405,7 +430,7 @@ createApp({
     }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, showEditDialog, editCourseName, editCourseDesc, editCoursePrice, editCourseDialog, saveCourseEdit, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, updateSentenceTrans, deleteSentence, newSentenceTrans, translatingCourseId, translateCourse };
   }
 }).mount("#app");
 </script>

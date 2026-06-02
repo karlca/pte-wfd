@@ -11,7 +11,8 @@ let usePg = false;
 async function init() {
   if (DATABASE_URL) {
     pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
-    await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;`);
+    await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;
+    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, verified BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS practice_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, started_at TIMESTAMPTZ, ended_at TIMESTAMPTZ, duration_seconds INTEGER DEFAULT 0, sentences_practiced INTEGER DEFAULT 0);
@@ -39,11 +40,11 @@ module.exports = {
     return (readJson().courses || []).sort((a,b) => a.id - b.id);
   },
   async createCourse(course) {
-    if (usePg) { const r = await pool.query("INSERT INTO courses (name, description) VALUES ($1,$2) RETURNING *", [course.name, course.description]); return r.rows[0]; }
+    if (usePg) { const r = await pool.query("INSERT INTO courses (name, description, price) VALUES ($1,$2,$3) RETURNING *", [course.name, course.description || '', course.price || 0]); return r.rows[0]; }
     const data = readJson(); data.courses = data.courses || []; course.id = (data.courses.length > 0 ? Math.max(...data.courses.map(c => c.id)) + 1 : 1); data.courses.push(course); writeJson(data); return course;
   },
   async updateCourse(id, updates) {
-    if (usePg) { await pool.query("UPDATE courses SET name=$1, description=$2 WHERE id=$3", [updates.name, updates.description, id]); return; }
+    if (usePg) { await pool.query("UPDATE courses SET name=$1, description=$2, price=$3 WHERE id=$4", [updates.name, updates.description || '', updates.price || 0, id]); return; }
   },
   async deleteCourse(id) {
     if (usePg) { await pool.query("DELETE FROM db_sentences WHERE course_id=$1", [id]); await pool.query("DELETE FROM courses WHERE id=$1", [id]); return; }
@@ -98,7 +99,8 @@ module.exports = {
     const data = readJson(); data.users.push(user); writeJson(data);
   },
   async updateUser(email, updates) {
-    if (usePg) { const sets = Object.keys(updates).map((k,i) => `${k}=$${i+2}`).join(","); await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;`);
+    if (usePg) { const sets = Object.keys(updates).map((k,i) => `${k}=$${i+2}`).join(","); await pool.query(`ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS ip TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS user_agent TEXT; ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location TEXT;
+    ALTER TABLE courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
     await pool.query(`UPDATE users SET ${sets} WHERE email=$1`, [email, ...Object.values(updates)]); return; }
     const data = readJson(); const idx = data.users.findIndex(u => u.email === email); if (idx >= 0) { Object.assign(data.users[idx], updates); writeJson(data); }
   },
