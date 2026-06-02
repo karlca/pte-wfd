@@ -304,9 +304,9 @@ createApp({
       translatingCourseId.value = null;
     }
     async function toggleCourse(c) {
-      expandedCourseId.value = expandedCourseId.value === c.id ? null : c.id;
-      if (expandedCourseId.value === c.id) await loadCourseSentences(c.id);
-    }
+      if (expandedCourseId.value === c.id) { expandedCourseId.value = null; return; }
+      await loadCourseSentences(c.id);
+      expandedCourseId.value = c.id;
     async function loadCourseSentences(cid) {
       try {
         const token = localStorage.getItem("admin_token");
