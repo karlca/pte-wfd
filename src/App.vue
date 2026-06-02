@@ -405,6 +405,15 @@ function refocus() { nextTick(() => hiddenInput.value?.focus()); }
 
 function nextSentence() {
   checkCurrentSentence();
+  if (repeatCount.value > 1 && currentRepeat.value < repeatCount.value) {
+    currentRepeat.value++;
+    userInput.value = {};
+    activeWordIndex.value = -1;
+    nextTick(() => focusFirstEmpty());
+    setTimeout(() => playAudio(), 400);
+    return;
+  }
+  currentRepeat.value = 1;
   if (currentIndex.value < sentences.value.length - 1) {
     const totalDone = currentIndex.value + 1;
     if (totalDone > 0 && totalDone % 5 === 0) {
@@ -415,7 +424,7 @@ function nextSentence() {
     }
     currentIndex.value++;
     userInput.value = {};
-    activeSlot.value = null;
+    activeWordIndex.value = -1;
     nextTick(() => focusFirstEmpty());
     saveCurrentState();
     setTimeout(() => playAudio(), 400);
