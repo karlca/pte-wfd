@@ -83,20 +83,30 @@ tr.detail-row td { padding: 0; background: #fafbff; }
         <input v-model="newCourseName" placeholder="Course name" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;margin-right:8px" />
         <button class="btn btn-primary btn-sm" @click="createCourse" :disabled="!newCourseName.trim()">Add</button>
       </div>
-      <table v-if="courseList.length > 0" style="margin-top:12px">
-        <thead><tr><th>ID</th><th>Name</th><th>Sentences</th><th>Actions</th></tr></thead>
-        <tbody>
-          <tr v-for="c in courseList" :key="c.id">
-            <td>{{ c.id }}</td>
-            <td>{{ c.name }}</td>
-            <td>{{ c.sentenceCount || 0 }}</td>
-            <td>
-              <button class="btn btn-sm" @click="editCourse(c)">Edit</button>
-              <button class="btn btn-danger btn-sm" @click="deleteCourse(c)">Del</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-for="c in courseList" :key="c.id" style="background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid #f0f0f0" @click="toggleCourse(c)">
+          <span style="font-weight:600">{{ c.name }}</span>
+          <span style="font-size:12px;color:#888">{{ c.sentenceCount || 0 }} sentences | {{ c.id === expandedCourseId ? 'Hide' : 'Show' }}</span>
+          <div>
+            <button class="btn btn-sm" @click.stop="editCourse(c)">Edit</button>
+            <button class="btn btn-danger btn-sm" @click.stop="deleteCourse(c)">Del</button>
+          </div>
+        </div>
+        <div v-if="expandedCourseId === c.id" style="padding:14px">
+          <div v-if="courseSentences[c.id] && courseSentences[c.id].length > 0">
+            <div v-for="s in courseSentences[c.id]" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">
+              <span style="font-size:12px;color:#888;min-width:40px">#{{ s.id }}</span>
+              <input :value="s.title" @change="updateSentence(s, $event.target.value)" style="flex:1;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px" />
+              <button class="btn btn-danger btn-sm" @click="deleteSentence(c, s)">Del</button>
+            </div>
+          </div>
+          <div v-else style="color:#aaa;font-size:12px">No sentences</div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <input v-model="newSentenceText[c.id]" placeholder="Add sentence" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px" @keyup.enter="addSentence(c)" />
+            <button class="btn btn-primary btn-sm" @click="addSentence(c)">Add</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="activeTab === 'users'" class="stats-row">
@@ -213,6 +223,9 @@ createApp({
     const activeTab = ref("users");
     const courseList = ref([]);
     const newCourseName = ref("");
+    const expandedCourseId = ref(null);
+    const courseSentences = ref({});
+    const newSentenceText = ref({});
     const expandedId = ref(null);
     const userDetail = ref(null);
     const detailLoading = ref(false);
@@ -249,6 +262,39 @@ createApp({
           } catch(e) { c.sentenceCount = 0; }
         }
       } catch(e) {}
+    }
+    async function toggleCourse(c) {
+      expandedCourseId.value = expandedCourseId.value === c.id ? null : c.id;
+      if (expandedCourseId.value === c.id) await loadCourseSentences(c.id);
+    }
+    async function loadCourseSentences(cid) {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const res = await fetch(API + "/courses/" + cid + "/sentences");
+        courseSentences.value = { ...courseSentences.value, [cid]: await res.json() };
+      } catch(e) {}
+    }
+    async function addSentence(c) {
+      const text = (newSentenceText.value[c.id] || "").trim();
+      if (!text) return;
+      const token = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/courses/" + c.id + "/sentences", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: text, degree: 1, category: "basic" }) });
+      newSentenceText.value[c.id] = "";
+      c.sentenceCount = (c.sentenceCount || 0) + 1;
+      await loadCourseSentences(c.id);
+    }
+    async function updateSentence(s, newTitle) {
+      const token = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/" + s.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ title: newTitle }) });
+      s.title = newTitle;
+    }
+    async function deleteSentence(c, s) {
+      if (!confirm("Delete this sentence?")) return;
+      const token = localStorage.getItem("admin_token");
+      await fetch(API + "/admin/sentences/" + s.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+      c.sentenceCount = Math.max(0, (c.sentenceCount || 0) - 1);
+      const list = (courseSentences.value[c.id] || []).filter(x => x.id !== s.id);
+      courseSentences.value = { ...courseSentences.value, [c.id]: list };
     }
     async function createCourse() {
       if (!newCourseName.value.trim()) return;
@@ -328,7 +374,7 @@ createApp({
     }
     if (loggedIn.value) loadUsers();
 
-    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses };
+    return { loggedIn, password, error, loading, users, expandedId, userDetail, detailLoading, totalSessions, totalTime, totalLogins, doLogin, doLogout, toggleDetail, deleteUser, formatTime, formatDate, formatDateTime, isOnline, activeTab, courseList, newCourseName, createCourse, editCourse, deleteCourse, loadCourses, expandedCourseId, courseSentences, newSentenceText, toggleCourse, addSentence, updateSentence, deleteSentence };
   }
 }).mount("#app");
 </script>
