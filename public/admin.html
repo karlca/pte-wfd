@@ -281,6 +281,10 @@ createApp({
       try {
         const res = await fetch(API + "/courses");
         courseList.value = await res.json();
+        // Initialize empty sentences arrays
+        const init = {};
+        courseList.value.forEach(c => { init[c.id] = []; });
+        courseSentences.value = { ...init };
         // Load sentence counts
         for (const c of courseList.value) {
           try {
@@ -312,7 +316,8 @@ createApp({
       try {
         const token = localStorage.getItem("admin_token");
         const res = await fetch(API + "/courses/" + cid + "/sentences");
-        courseSentences.value = { ...courseSentences.value, [cid]: await res.json() };
+        const data = await res.json();
+        courseSentences.value = { ...courseSentences.value, [cid]: data };
       } catch(e) {}
     }
     async function addSentence(c) {
