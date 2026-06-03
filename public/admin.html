@@ -6,41 +6,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 <script>const API=(window.location.hostname==="localhost")?"http://localhost:3001/api":"/api";</script>
-<style>
-  .btn { @apply px-4 py-2 border border-gray-300 rounded-md cursor-pointer text-sm bg-white hover:opacity-85; }
-  .btn-primary { @apply bg-blue-600 text-white border-blue-600; }
-  .btn-danger { @apply bg-red-600 text-white border-red-600; }
-  .btn-sm { @apply text-xs px-2.5 py-1; }
-  .login-box { @apply max-w-sm mx-auto mt-20 bg-white p-8 rounded-xl shadow-md text-center; }
-  .login-box h2 { @apply mb-5; }
-  .login-box input { @apply w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm mb-3 outline-none focus:border-blue-600; }
-  .error { @apply text-red-600 text-xs mb-2.5; }
-  table { @apply w-full bg-white rounded-xl shadow-sm border-collapse text-sm; }
-  th,td { @apply px-3.5 py-2.5 text-left border-b border-gray-100; }
-  th { @apply bg-gray-50 font-semibold text-gray-600; }
-  .tabs { @apply flex border border-gray-300 rounded-lg overflow-hidden; }
-  .tabs button { @apply px-4 py-1.5 border-none bg-gray-100 text-xs text-gray-500 cursor-pointer; }
-  .tabs button.active { @apply bg-blue-600 text-white; }
-  .stats-row { @apply flex gap-4 mb-6; }
-  .stat-card { @apply flex-1 bg-white p-4 rounded-xl shadow-sm text-center; }
-  .stat-card .num { @apply text-2xl font-bold text-blue-600; }
-  .stat-card .label { @apply text-[11px] text-gray-400 mt-1; }
-  .course-row { @apply bg-white rounded-lg mb-2 shadow-sm; }
-  .course-header { @apply px-3.5 py-2.5 cursor-pointer border-b border-gray-100 flex items-center justify-between hover:bg-gray-50; }
-  .sentence-list { @apply p-3.5; }
-  .sentence-item { @apply flex items-center gap-2 py-1.5 border-b border-gray-100; }
-  .dialog-overlay { @apply fixed inset-0 bg-black/30 flex items-center justify-center z-[999]; }
-  .dialog-box { @apply bg-white rounded-xl p-6 w-[420px] max-w-[90%]; }
-  .dialog-box h3 { @apply mb-4; }
-  .dialog-box input { @apply w-full p-2 border border-gray-300 rounded-md mb-2 text-sm; }
-  .course-form { @apply flex gap-2 mb-3 flex-wrap; }
-  .course-form input { @apply px-2.5 py-1.5 border border-gray-300 rounded-md text-sm; }
-  .verified { @apply text-green-700; }
-  .unverified { @apply text-orange-700; }
-  .detail-table { @apply w-full border-collapse text-xs mb-2; }
-  .detail-table th { @apply bg-gray-100 text-[11px] px-2.5 py-1.5; }
-  .detail-table td { @apply px-2.5 py-1.5; }
-</style>
+
 <script>(function(){var t=localStorage.getItem("pte_theme")||"tech";document.documentElement.setAttribute("data-theme",t);})();</script>
 </head>
 <body>
