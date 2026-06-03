@@ -10,8 +10,21 @@
         <span class="user-email">{{ userEmail }}</span>
         <button class="btn-logout" @click="doLogout" title="Logout">&times;</button>
       </span>
-      <span class="counter">{{ currentIndex + 1 }} / {{ sentences.length }}</span>
+      <span class="counter" @click="showSentenceList = !showSentenceList" style="cursor:pointer;position:relative">{{ currentIndex + 1 }} / {{ sentences.length }}</span>
     </header>
+    <!-- Sentence Dropdown -->
+    <div v-if="showSentenceList" class="sentence-dropdown" @click.self="showSentenceList=false">
+      <div class="sentence-dropdown-content">
+        <div v-for="(s,i) in sentences" :key="s.id" 
+             :class="['sentence-dropdown-item', { current: i===currentIndex, familiar: familiarIds.has(s.id) }]"
+             @click="jumpToSentence(i); showSentenceList=false">
+          <span class="sentence-dropdown-num">{{ i+1 }}</span>
+          <span class="sentence-dropdown-text">{{ s.en.substring(0,50) }}{{ s.en.length>50?'...':'' }}</span>
+          <span v-if="familiarIds.has(s.id)" class="sentence-dropdown-tag">Familiar</span>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Auth Page -->
     <div v-if="!loggedIn" class="auth-page">
@@ -76,6 +89,7 @@
 
     <div class="main" v-if="started && currentSentence">
       <div class="audio-bar">
+        <button class="btn-familiar" @click="markFamiliar" title="Mark as familiar"> Familiar</button>
         <button class="btn-audio" @click="playAudio" :disabled="isPlaying" title="播放语音">
           <span v-if="isPlaying">▶▶</span>
           <span v-else>▶</span>
@@ -210,7 +224,9 @@ const practiceMode = ref("all");
 const selectedCourseId = ref(null);
 const courses = ref([]);
 const loadingSentences = ref(false);
-const visitCount = ref(0); // "all"  // "all" | "wrong"
+const visitCount = ref(0);
+const familiarIds = ref(new Set());
+const showSentenceList = ref(false); // "all"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
 const hasSavedState = ref(false);
@@ -670,6 +686,39 @@ async function trackVisit() {
   } catch(e) {}
 }
 
+function markFamiliar() {
+  if (!currentSentence.value) return;
+  const id = currentSentence.value.id;
+  const s = new Set(familiarIds.value);
+  s.add(id);
+  familiarIds.value = s;
+  // Remove current sentence from list
+  sentences.value = sentences.value.filter((_, i) => i !== currentIndex.value);
+  if (sentences.value.length === 0) {
+    currentIndex.value = -1;
+    finishSession();
+    return;
+  }
+  if (currentIndex.value >= sentences.value.length) {
+    currentIndex.value = sentences.value.length - 1;
+  }
+  userInput.value = {};
+  activeWordIndex.value = -1;
+  saveCurrentState();
+  nextTick(() => focusFirstEmpty());
+  setTimeout(() => playAudio(), 400);
+}
+
+function jumpToSentence(idx) {
+  if (idx < 0 || idx >= sentences.value.length) return;
+  currentIndex.value = idx;
+  userInput.value = {};
+  activeWordIndex.value = -1;
+  saveCurrentState();
+  nextTick(() => focusFirstEmpty());
+  setTimeout(() => playAudio(), 400);
+}
+
 function playAudio() {
   if (!currentText.value || isPlaying.value) return;
   speechSynthesis.cancel();
@@ -818,6 +867,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .voice-select { padding: 4px 8px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 12px; color: #666; background: #fff; max-width: 140px; outline: none; }
 .voice-select:focus { border-color: #2d6a4f; }
 .timer-display { margin-left: auto; font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
+.btn-familiar { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px; background: transparent; color: #888; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.btn-familiar:hover { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; }
+.sentence-dropdown { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
+.sentence-dropdown-content { background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); max-height: 70vh; overflow-y: auto; width: 90%; max-width: 500px; padding: 8px; }
+.sentence-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.15s; }
+.sentence-dropdown-item:hover { background: #f0f4ff; }
+.sentence-dropdown-item.current { background: #e3f2fd; font-weight: 600; }
+.sentence-dropdown-item.familiar { opacity: 0.5; text-decoration: line-through; }
+.sentence-dropdown-num { min-width: 30px; text-align: right; font-size: 12px; color: #888; }
+.sentence-dropdown-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sentence-dropdown-tag { font-size: 10px; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; }
 .celebration-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .celebration-text { font-size: 48px; font-weight: 800; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popIn 0.4s ease-out; }
 @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
