@@ -1,64 +1,64 @@
 <template>
-  <div class="app">
-    <header class="header">
-      <h1>PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
-      <select v-if="availableVoices.length > 0" v-model="selectedVoiceName" @change="onVoiceChange" class="voice-select">
+  <div class="app max-w-3xl mx-auto px-4 py-6 min-h-screen bg-gray-100 text-gray-900">
+    <header class="header flex items-center justify-between pb-5 border-b border-gray-200 mb-6">
+      <h1 class="text-2xl font-bold">PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
+      <select v-if="availableVoices.length > 0" v-model="selectedVoiceName" @change="onVoiceChange" class="voice-select px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-500 bg-white max-w-[140px] outline-none focus:border-primary">
           <option value="">Auto</option>
           <option v-for="v in availableVoices" :key="v.name" :value="v.name">{{ v.name }}</option>
         </select>
-      <span class="user-info">
-        <span class="user-email">{{ userEmail }}</span>
-        <button class="btn-logout" @click="doLogout" title="Logout">&times;</button>
+      <span class="user-info flex items-center gap-2>
+        <span class="user-email text-xs text-gray-400 max-w-[140px] truncate>{{ userEmail }}</span>
+        <button class="btn-logout bg-transparent border-none text-gray-400 text-lg cursor-pointer px-1 hover:text-danger transition-colors" @click="doLogout" title="Logout">&times;</button>
       </span>
-      <span class="counter" @click="showSentenceList = !showSentenceList" style="cursor:pointer;position:relative">{{ currentIndex + 1 }} / {{ sentences.length }} <span style="font-size:10px">&#9660;</span></span>
+      <span class="counter text-sm text-gray-500 bg-gray-200 px-3 py-1 rounded-xl font-semibold" @click="showSentenceList = !showSentenceList" style="cursor:pointer;position:relative">{{ currentIndex + 1 }} / {{ sentences.length }} <span style="font-size:10px">&#9660;</span></span>
     </header>
     <!-- Sentence Dropdown -->
-    <div v-if="showSentenceList" class="sentence-dropdown" @click.self="showSentenceList=false">
-      <div class="sentence-dropdown-content">
+    <div v-if="showSentenceList" class="sentence-dropdown fixed inset-0 bg-black/20 z-[200] flex items-start justify-center pt-[60px]" @click.self="showSentenceList=false">
+      <div class="sentence-dropdown-content bg-white rounded-xl shadow-2xl max-h-[70vh] overflow-y-auto w-[90%] max-w-[500px] p-2">
         <div v-for="(s,i) in sentences" :key="s.id" 
              :class="['sentence-dropdown-item', { current: i===currentIndex, familiar: familiarIds.has(s.id) }]"
              @click="jumpToSentence(i); showSentenceList=false">
-          <span class="sentence-dropdown-num">{{ i+1 }}</span>
-          <span class="sentence-dropdown-text">{{ s.en.substring(0,50) }}{{ s.en.length>50?'...':'' }}</span>
-          <span v-if="familiarIds.has(s.id)" class="sentence-dropdown-tag">Familiar</span>
+          <span class="sentence-dropdown-num min-w-[30px] text-right text-xs text-gray-400">{{ i+1 }}</span>
+          <span class="sentence-dropdown-text flex-1 truncate">{{ s.en.substring(0,50) }}{{ s.en.length>50?'...':'' }}</span>
+          <span v-if="familiarIds.has(s.id)" class="sentence-dropdown-tag text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded">Familiar</span>
         </div>
       </div>
     </div>
 
 
     <!-- Auth Page -->
-    <div v-if="!loggedIn" class="auth-page">
-      <div class="auth-card">
+    <div v-if="!loggedIn" class="auth-page flex justify-center items-center min-h-[60vh]">
+      <div class="auth-card bg-white rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
         <h2>PTE WFD Practice</h2>
-        <div class="auth-tabs">
+        <div class="auth-tabs flex mb-4 rounded-lg overflow-hidden border border-gray-300">
           <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
           <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
         </div>
-        <input v-model="authEmail" type="email" placeholder="Email" class="auth-input" @keyup.enter="doLogin" />
-        <input v-model="authPassword" type="password" placeholder="Password" class="auth-input" @keyup.enter="doLogin" />
-        <div v-if="authError" class="auth-error">{{ authError }}</div>
+        <input v-model="authEmail" type="email" placeholder="Email" class="auth-input w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm mb-2.5 outline-none focus:border-primary" @keyup.enter="doLogin" />
+        <input v-model="authPassword" type="password" placeholder="Password" class="auth-input w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm mb-2.5 outline-none focus:border-primary" @keyup.enter="doLogin" />
+        <div v-if="authError" class="auth-error text-danger text-xs mb-2.5">{{ authError }}</div>
         <!-- Verification form -->
-    <div v-if="needsVerify" class="auth-card">
+    <div v-if="needsVerify" class="auth-card bg-white rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
       <h2>Verify Email</h2>
-      <p class="verify-msg" v-html="verifyMessage"></p>
-      <div v-if="!verifyEmailSent && verifyDevCode" class="verify-dev-code">
+      <p class="verify-msg text-xs text-gray-500 mb-3" v-html="verifyMessage"></p>
+      <div v-if="!verifyEmailSent && verifyDevCode" class="verify-dev-code bg-green-50 border border-green-200 rounded-lg p-3 mb-3 text-center">
         <span>Verification code (dev mode): </span><strong>{{ verifyDevCode }}</strong>
       </div>
-      <div v-if="verifyEmailSent" class="verify-email-sent">
+      <div v-if="verifyEmailSent" class="verify-email-sent bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-xs text-blue-700 text-center">
         A verification code has been sent to <strong>{{ verifyEmailRef }}</strong>. Please check your inbox.
       </div>
-      <input v-model="verifyCode" type="text" placeholder="Enter 6-digit code" class="auth-input" maxlength="6" @keyup.enter="doVerify" />
-      <div v-if="authError" class="auth-error">{{ authError }}</div>
-      <button class="btn-auth" @click="doVerify" :disabled="authLoading || verifyCode.length !== 6">
+      <input v-model="verifyCode" type="text" placeholder="Enter 6-digit code" class="auth-input w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm mb-2.5 outline-none focus:border-primary" maxlength="6" @keyup.enter="doVerify" />
+      <div v-if="authError" class="auth-error text-danger text-xs mb-2.5">{{ authError }}</div>
+      <button class="btn-auth w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed" @click="doVerify" :disabled="authLoading || verifyCode.length !== 6">
         {{ authLoading ? 'Verifying...' : 'Verify' }}
       </button>
-      <button class="btn-link" @click="doResendCode">Resend code</button>
-      <button class="btn-link" @click="needsVerify = false">Back</button>
+      <button class="btn-link bg-transparent border-none text-accent text-xs cursor-pointer mt-2 block w-full text-center hover:underline" @click="doResendCode">Resend code</button>
+      <button class="btn-link bg-transparent border-none text-accent text-xs cursor-pointer mt-2 block w-full text-center hover:underline" @click="needsVerify = false">Back</button>
     </div>
 
     <!-- Login/Register form -->
-    <div v-if="!needsVerify" class="auth-card">
-        <button class="btn-auth" @click="doLogin" :disabled="authLoading">
+    <div v-if="!needsVerify" class="auth-card bg-white rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
+        <button class="btn-auth w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed" @click="doLogin" :disabled="authLoading">
           {{ authLoading ? 'Loading...' : (authMode === 'register' ? 'Register' : 'Login') }}
         </button>
       </div>
@@ -66,46 +66,46 @@
     </div>
 
     <!-- Category Selector -->
-    <div v-if="loggedIn && !started" class="auth-page">
-      <div class="auth-card">
+    <div v-if="loggedIn && !started" class="auth-page flex justify-center items-center min-h-[60vh]">
+      <div class="auth-card bg-white rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
         <h2>Select Course</h2>
-        <div class="cat-options" v-if="courses.length > 0">
-          <button v-for="c in courses" :key="c.id" class="btn-cat" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
+        <div class="cat-options flex gap-2 mb-1 v-if="courses.length > 0">
+          <button v-for="c in courses" :key="c.id" class="btn-cat flex-1 py-2.5 px-2 border-2 border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-500 hover:border-primary hover:text-primary transition-all cursor-pointer" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
         </div>
         <div v-else style="color:#888;font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }} (courses.value.length = {{ courses.length }})</div>
-        <button v-if="hasSavedState" class="btn-auth" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue</button></div>
+        <button v-if="hasSavedState" class="btn-auth w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue</button></div>
     </div>
 
     <!-- Celebration Overlay -->
     <transition name="fade">
-      <div v-if="showCelebration" class="celebration-overlay">
-        <div class="celebration-text">{{ celebrationText }}</div>
+      <div v-if="showCelebration" class="celebration-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+        <div class="celebration-text text-5xl font-extrabold text-white animate-popIn">{{ celebrationText }}</div>
       </div>
     </transition>
     <!-- Encouragement Toast -->
     <transition name="fade">
-      <div v-if="encouragementVisible" class="encouragement-toast">{{ encouragementMsg }}</div>
+      <div v-if="encouragementVisible" class="encouragement-toast fixed top-20 left-1/2 -translate-x-1/2 bg-primary text-white px-7 py-3 rounded-3xl text-base font-semibold z-[99] shadow-lg">{{ encouragementMsg }}</div>
     </transition>
 
     <div class="main" v-if="started && currentSentence">
-      <div class="audio-bar">
-        <button class="btn-familiar" @click="markFamiliar" title="Mark as familiar"> 已熟悉</button>
-        <button class="btn-audio" @click="playAudio" :disabled="isPlaying" title="播放语音">
+      <div class="flex items-center gap-3 mb-5">
+        <button class="btn-familiar inline-flex items-center gap-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-500 font-medium hover:bg-green-50 hover:text-green-700 hover:border-green-700 transition-all" @click="markFamiliar" title="Mark as familiar"> 已熟悉</button>
+        <button class="btn-audio inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors" @click="playAudio" :disabled="isPlaying" title="播放语音">
           <span v-if="isPlaying">▶▶</span>
           <span v-else>▶</span>
           播放
         </button>
-        <div class="audio-progress" v-if="isPlaying">
-          <div class="progress-track"></div>
+        <div class="flex-1" v-if="isPlaying">
+          <div class="h-1 bg-gray-200 rounded animate-pulse"></div>
         </div>
       </div>
 
-      <div class="sentence-area">
-        <div class="blanks-row" ref="blanksContainer">
+      <div class="sentence-area bg-white rounded-xl p-5 sm:p-7 shadow-sm mb-4">
+        <div class="blanks-row flex flex-wrap items-end leading-[2.2]" ref="blanksContainer">
             <span
               v-for="(w, wi) in parsedWords"
               :key="wi"
-              class="word-slot"
+              class="word-slot inline-flex items-center justify-center min-w-[40px] h-[46px] text-[22px] font-semibold border-b-[1.5px] px-2.5 mx-[3px] cursor-pointer select-none transition-colors
               :class="{
                 filled: w.filled,
                 active: activeWordIndex === wi,
@@ -115,7 +115,7 @@
               :style="{ minWidth: w.width + 'px' }"
               @click="focusWord(wi)"
             >{{ w.value || '' }}</span>
-            <span class="word-space">&nbsp;</span>
+            <span class="word-space w-5 inline-block text-2xl>&nbsp;</span>
 
         </div>
       </div>
@@ -123,63 +123,63 @@
       <input ref="hiddenInput" class="hidden-input" @input="onInput" @keydown="onKeydown" @blur="refocus"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
-      <div class="reference-section">
-        <button class="btn-reference" @click="showReference = !showReference">
+      <div class="reference-section mb-3>
+        <button class="btn-reference px-4 py-2 bg-transparent text-accent border border-accent rounded-md text-xs font-medium hover:bg-blue-50 transition-colors" @click="showReference = !showReference">
           {{ showReference ? '隐藏' : '显示' }}完整句子
         </button>
         <transition name="fade">
           <div v-if="showReference" class="reference-section-detail">
-            <div class="reference-text">{{ currentText }}</div>
-            <div class="reference-translation">{{ currentTranslation }}</div>
+            <div class="reference-text mt-2.5 p-3 bg-white rounded-lg border-l-4 border-primary text-lg font-medium text-gray-700 shadow-sm">{{ currentText }}</div>
+            <div class="reference-translation mt-2 p-2.5 bg-gray-50 rounded-lg border-l-[3px] border-gray-300 text-sm text-gray-500">{{ currentTranslation }}</div>
           </div>
         </transition>
       </div>
 
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: totalWords ? (filledCount / totalChars * 100) + '%' : '0%' }"></div>
+      <div class="progress-bar h-1.5 bg-gray-200 rounded mb-4 overflow-hidden">
+        <div class="progress-fill h-full bg-gradient-to-r from-primary to-primary-light rounded transition-all duration-300" :style="{ width: totalWords ? (filledCount / totalChars * 100) + '%' : '0%' }"></div>
       </div>
 
-      <div class="mode-bar">
-        <button class="btn-mode" :class="{ active: practiceMode === 'all' }" @click="switchMode('all')">All</button>
-        <button class="btn-mode" :class="{ active: practiceMode === 'wrong' }" @click="switchMode('wrong')" :disabled="wrongSentencesList.length === 0">
+      <div class="mode-bar flex items-center gap-2 mb-3>
+        <button class="btn-mode px-3 py-1.5 border border-gray-300 rounded-md bg-white text-xs text-gray-500 cursor-pointer aria-pressed:bg-primary aria-pressed:text-white disabled:opacity-40 disabled:cursor-not-allowed" :class="{ active: practiceMode === 'all' }" @click="switchMode('all')">All</button>
+        <button class="btn-mode px-3 py-1.5 border border-gray-300 rounded-md bg-white text-xs text-gray-500 cursor-pointer aria-pressed:bg-primary aria-pressed:text-white disabled:opacity-40 disabled:cursor-not-allowed" :class="{ active: practiceMode === 'wrong' }" @click="switchMode('wrong')" :disabled="wrongSentencesList.length === 0">
           Wrong ({{ wrongSentencesList.length }})
         </button>
-        <select v-model="repeatCount" class="voice-select" style="max-width:70px" title="Repeat">
+        <select v-model="repeatCount" class="voice-select px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-500 bg-white max-w-[140px] outline-none focus:border-primary" style="max-width:70px" title="Repeat">
           <option :value="1">x1</option>
           <option :value="5">x5</option>
           <option :value="10">x10</option>
         </select>
-        <span class="timer-display">{{ Math.floor(elapsedSeconds / 60) }}:{{ String(elapsedSeconds % 60).padStart(2, '0') }}</span>
+        <span class="timer-display ml-auto text-xs text-gray-400 tabular-nums">{{ Math.floor(elapsedSeconds / 60) }}:{{ String(elapsedSeconds % 60).padStart(2, '0') }}</span>
       </div>
-      <div class="nav-buttons">
-        <label class="auto-toggle">
+      <div class="nav-buttons flex gap-2.5 justify-center items-center flex-wrap">
+        <label class="auto-toggle inline-flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
           <input type="checkbox" v-model="autoAdvance" />
-          <span class="toggle-label">自动下一句</span>
+          <span class="toggle-label leading-none">自动下一句</span>
         </label>
-        <button class="btn-nav" @click="prevSentence" :disabled="currentIndex === 0">← 上一句</button>
-        <button class="btn-nav" @click="resetCurrent">重置</button>
-        <button class="btn-nav" @click="nextSentence"
+        <button class="btn-nav px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" @click="prevSentence" :disabled="currentIndex === 0">← 上一句</button>
+        <button class="btn-nav px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" @click="resetCurrent">重置</button>
+        <button class="btn-nav px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" @click="nextSentence"
           :disabled="currentIndex >= sentences.length - 1 && !allFilled">下一句 →</button>
       </div>
     </div>
 
-        <div v-if="started && !currentSentence" class="completion">
+        <div v-if="started && !currentSentence" class="completion text-center py-16 px-5>
       <div v-if="savingSession" style="font-size:14px;color:#666;margin-bottom:12px;">Saving...</div>
-      <div class="completion-icon">🎉</div>
+      <div class="completion-icon text-7xl mb-4>🎉</div>
       <h2>练习完成!</h2>
-      <div class="session-stats">
-        <div class="stat-item"><span class="stat-num">{{ sentences.length }}</span><span class="stat-label">Sentences</span></div>
-        <div class="stat-item"><span class="stat-num">{{ perfectCount }}</span><span class="stat-label">Perfect</span></div>
-        <div class="stat-item"><span class="stat-num">{{ formatTime(elapsedSeconds) }}</span><span class="stat-label">Time</span></div>
-        <div class="stat-item"><span class="stat-num">{{ sentences.length - wrongSentencesSet.size }}</span><span class="stat-label">Correct</span></div>
+      <div class="session-stats flex gap-3 justify-center my-4 flex-wrap">
+        <div class="stat-item bg-gray-50 rounded-xl p-3.5 text-center min-w-[70px]"><span class="stat-num block text-2xl font-bold text-primary">{{ sentences.length }}</span><span class="stat-label block text-[11px] text-gray-400 mt-0.5">Sentences</span></div>
+        <div class="stat-item bg-gray-50 rounded-xl p-3.5 text-center min-w-[70px]"><span class="stat-num block text-2xl font-bold text-primary">{{ perfectCount }}</span><span class="stat-label block text-[11px] text-gray-400 mt-0.5">Perfect</span></div>
+        <div class="stat-item bg-gray-50 rounded-xl p-3.5 text-center min-w-[70px]"><span class="stat-num block text-2xl font-bold text-primary">{{ formatTime(elapsedSeconds) }}</span><span class="stat-label block text-[11px] text-gray-400 mt-0.5">Time</span></div>
+        <div class="stat-item bg-gray-50 rounded-xl p-3.5 text-center min-w-[70px]"><span class="stat-num block text-2xl font-bold text-primary">{{ sentences.length - wrongSentencesSet.size }}</span><span class="stat-label block text-[11px] text-gray-400 mt-0.5">Correct</span></div>
       </div>
-      <p class="encourage-text">{{ completionMessage }}</p>
-      <div class="comp-buttons">
+      <p class="encourage-text text-base text-gray-500 mb-4 italic">{{ completionMessage }}</p>
+      <div class="comp-buttons flex gap-2.5 justify-center">
         <button class="btn-nav btn-share" @click="shareResults">Share</button>
-        <button class="btn-nav" @click="restart">再来一次</button>
+        <button class="btn-nav px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" @click="restart">再来一次</button>
       </div>
     </div>
-    <footer class="app-footer">
+    <footer class="app-footer text-center py-4 text-xs text-gray-400 mt-6">
       <span>Visits: {{ visitCount.toLocaleString() }}</span>
     </footer>
   </div>
@@ -773,123 +773,10 @@ function playKeySound() {
 </script>
 
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
-.app { max-width: 720px; margin: 0 auto; padding: 24px 16px; min-height: 100vh; }
-.header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; margin-bottom: 24px; }
-.header h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; }
-.counter { font-size: 14px; color: #666; background: #e8e8ec; padding: 4px 12px; border-radius: 12px; font-weight: 600; }
-.audio-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-.btn-audio { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: #2d6a4f; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-.btn-audio:hover:not(:disabled) { background: #1b4332; }
-.btn-audio:disabled { opacity: 0.6; cursor: not-allowed; }
-.audio-progress { flex: 1; }
-.progress-track { height: 4px; background: #e0e0e0; border-radius: 2px; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-.sentence-area { background: #fff; border-radius: 12px; padding: 28px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.blanks-row { display: flex; flex-wrap: wrap; align-items: flex-end; line-height: 2.2; }
-.word-group { display: inline-flex; font-size: 26px; gap: 4px; }
-.word-space { width: 20px; display: inline-block; font-size: 26px; }
-.word-slot { display: inline-flex; align-items: center; justify-content: center; height: 46px; font-size: 22px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 1.5px solid #bbb; padding: 0 10px; margin: 0 3px; min-width: 40px; }
-.word-slot.filled { border-bottom: 1.5px solid #2d6a4f; color: #1a1a2e; }
-.word-slot.correct { color: #2d6a4f; }
-.word-slot.incorrect { color: #d32f2f; border-bottom: 1.5px solid #d32f2f; }
-.word-slot.active { border-bottom: 1.5px solid #1a73e8; color: #1a73e8; box-shadow: 0 1px 0 #1a73e8; }
-.char-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 46px; font-size: 26px; font-weight: 600; color: #333; cursor: pointer; transition: border-color 0.15s, color 0.15s; user-select: none; border-bottom: 1.5px solid #bbb; }
-.char-slot.punctuation { border-bottom: none; min-width: auto; width: auto; cursor: default; color: #555; padding: 0 1px; }
-.char-slot.filled { border-bottom: 1.5px solid #2d6a4f; color: #1a1a2e; }
-.char-slot.correct { color: #2d6a4f; }
-.char-slot.incorrect { color: #d32f2f; border-bottom: 1.5px solid #d32f2f; }
-.char-slot.active { border-bottom: 1.5px solid #1a73e8; color: #1a73e8; }
-.hidden-input { position: fixed; left: -9999px; top: -9999px; opacity: 0; width: 0; height: 0; }
-.reference-section { margin-bottom: 12px; }
-.btn-reference { padding: 8px 16px; background: transparent; color: #1a73e8; border: 1px solid #1a73e8; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-.btn-reference:hover { background: #e8f0fe; }
-.reference-text { margin-top: 10px; padding: 12px 16px; background: #fff; border-radius: 8px; border-left: 4px solid #2d6a4f; font-size: 18px; font-weight: 500; color: #333; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; margin-bottom: 16px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, #2d6a4f, #52b788); border-radius: 3px; transition: width 0.3s ease; }
-.nav-buttons { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
-.auto-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #666; user-select: none; }
-.auto-toggle input { width: 16px; height: 16px; accent-color: #2d6a4f; cursor: pointer; }
-.toggle-label { line-height: 1; }
-.btn-nav { padding: 10px 20px; background: #fff; color: #333; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-.btn-nav:hover:not(:disabled) { background: #f0f0f0; border-color: #bbb; }
-.btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
-.completion { text-align: center; padding: 60px 20px; }
-.completion-icon { font-size: 64px; margin-bottom: 16px; }
-.completion h2 { font-size: 24px; margin-bottom: 8px; }
-.completion p { font-size: 16px; color: #666; margin-bottom: 24px; }
-.completion .btn-nav { background: #2d6a4f; color: #fff; border-color: #2d6a4f; font-size: 16px; padding: 12px 28px; }
-.reference-section-detail { }
-.reference-translation {
-  margin-top: 8px;
-  padding: 10px 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  font-size: 15px;
-  color: #666;
-  border-left: 3px solid #ddd;
-}
-.auth-page { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
-.auth-card { background: #fff; border-radius: 12px; padding: 32px; width: 100%; max-width: 380px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
-.auth-card h2 { font-size: 20px; margin-bottom: 20px; color: #1a1a2e; }
-.auth-tabs { display: flex; gap: 0; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #d0d0d0; }
-.auth-tabs button { flex: 1; padding: 8px; border: none; background: #f5f5f5; font-size: 14px; cursor: pointer; color: #666; }
-.auth-tabs button.active { background: #2d6a4f; color: #fff; }
-.auth-input { width: 100%; padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; }
-.auth-input:focus { border-color: #2d6a4f; }
-.cat-options { display: flex; gap: 8px; margin-bottom: 4px; }
-.btn-cat { flex: 1; padding: 10px 8px; border: 2px solid #d0d0d0; border-radius: 8px; background: #fff; font-size: 14px; font-weight: 500; cursor: pointer; color: #666; transition: all 0.2s; }
-.btn-cat:hover { border-color: #2d6a4f; color: #2d6a4f; }
-.btn-cat.active { border-color: #2d6a4f; background: #2d6a4f; color: #fff; }
-.auth-error { color: #d32f2f; font-size: 13px; margin-bottom: 10px; }
-.btn-auth { width: 100%; padding: 10px; background: #2d6a4f; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
-.btn-auth:disabled { opacity: 0.6; cursor: not-allowed; }
-.verify-msg { font-size: 13px; color: #666; margin-bottom: 12px; }
-.verify-link { display: block; font-size: 13px; color: #1a73e8; margin-bottom: 12px; text-decoration: underline; }
-.verify-link:hover { color: #1557b0; }
-.btn-link { background: none; border: none; color: #1a73e8; font-size: 13px; cursor: pointer; margin-top: 8px; display: block; width: 100%; text-align: center; }
-.btn-link:hover { text-decoration: underline; }
-.verify-dev-code { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: center; }
-.verify-dev-code span { font-size: 13px; color: #2e7d32; }
-.verify-dev-code strong { font-size: 24px; letter-spacing: 6px; color: #1b5e20; display: block; margin-top: 4px; }
-.verify-email-sent { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #1565c0; text-align: center; }
-.user-info { display: flex; align-items: center; gap: 8px; }
-.user-email { font-size: 12px; color: #888; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn-logout { background: none; border: none; color: #999; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
-.btn-logout:hover { color: #d32f2f; }
-.mode-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.btn-mode { padding: 6px 12px; border: 1px solid #d0d0d0; border-radius: 6px; background: #fff; font-size: 12px; cursor: pointer; color: #666; }
-.btn-mode.active { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
-.btn-mode:disabled { opacity: 0.4; cursor: not-allowed; }
-.voice-select { padding: 4px 8px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 12px; color: #666; background: #fff; max-width: 140px; outline: none; }
-.voice-select:focus { border-color: #2d6a4f; }
-.timer-display { margin-left: auto; font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
-.btn-familiar { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px; background: transparent; color: #888; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-.btn-familiar:hover { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; }
-.sentence-dropdown { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
-.sentence-dropdown-content { background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); max-height: 70vh; overflow-y: auto; width: 90%; max-width: 500px; padding: 8px; }
-.sentence-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.15s; }
-.sentence-dropdown-item:hover { background: #f0f4ff; }
-.sentence-dropdown-item.current { background: #e3f2fd; font-weight: 600; }
-.sentence-dropdown-item.familiar { opacity: 0.5; text-decoration: line-through; }
-.sentence-dropdown-num { min-width: 30px; text-align: right; font-size: 12px; color: #888; }
-.sentence-dropdown-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sentence-dropdown-tag { font-size: 10px; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; }
-.celebration-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.celebration-text { font-size: 48px; font-weight: 800; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popIn 0.4s ease-out; }
 @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-.encouragement-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #2d6a4f; color: #fff; padding: 12px 28px; border-radius: 24px; font-size: 16px; font-weight: 600; z-index: 99; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-.session-stats { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
-.stat-item { background: #f8f9fa; border-radius: 12px; padding: 14px 18px; text-align: center; min-width: 70px; }
-.stat-num { display: block; font-size: 26px; font-weight: 700; color: #2d6a4f; }
-.stat-label { display: block; font-size: 11px; color: #888; margin-top: 2px; }
-.encourage-text { font-size: 16px; color: #555; margin-bottom: 16px; font-style: italic; }
-.comp-buttons { display: flex; gap: 10px; justify-content: center; }
-.btn-share { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-.btn-share:hover { background: #1557b0; }
-.completion .btn-nav:hover { background: #1b4332; }
-.app-footer { text-align: center; padding: 16px; font-size: 12px; color: #aaa; margin-top: 24px; }
+.animate-pulse { animation: pulse 1.5s infinite; }
+.animate-popIn { animation: popIn 0.4s ease-out; }
+.hidden-input { position: fixed; left: -9999px; top: -9999px; opacity: 0; width: 0; height: 0; }
+</style>
 </style>
