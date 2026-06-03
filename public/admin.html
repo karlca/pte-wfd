@@ -194,8 +194,9 @@ createApp({setup(){
   }
   function doLogout(){localStorage.removeItem("admin_token");loggedIn.value=false}
   // users
+  function checkAuth(res){ if(res.status===401){ localStorage.removeItem("admin_token"); loggedIn.value=false; } return res; }
   async function loadUsers(){
-    try{const t=localStorage.getItem("admin_token");if(!t)return;const r=await fetch(API+"/admin/users",{headers:{Authorization:"Bearer "+t}});if(!r.ok){users.value=[];return};const d=await r.json();users.value=Array.isArray(d)?d:[]}catch(e){users.value=[]}
+    try{const t=localStorage.getItem("admin_token");if(!t)return;const r=await checkAuth(await fetch(API+"/admin/users",{headers:{Authorization:"Bearer "+t}}));if(!r.ok){users.value=[];return};const d=await r.json();users.value=Array.isArray(d)?d:[]}catch(e){users.value=[]}
   }
   async function toggleDetail(u){
     if(expId.value===u.id){expId.value=null;udetail.value=null;return}
