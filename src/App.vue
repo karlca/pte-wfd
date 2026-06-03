@@ -1,5 +1,5 @@
 <template>
-  <div class="app max-w-3xl mx-auto px-4 py-6 min-h-screen bg-[var(--tw-bg-main)] text-[var(--tw-text-main)]">
+  <div class="app max-w-5xl mx-auto px-6 py-8 min-h-screen bg-[var(--tw-bg-main)] text-[var(--tw-text-main)]">
     <header class="header flex items-center justify-between pb-5 border-b border-[var(--tw-border)] mb-6">
       <h1 class="text-2xl font-bold">PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
       <select v-model="currentTheme" @change="onThemeChange"
@@ -21,7 +21,7 @@
     </header>
     <!-- Sentence Dropdown -->
     <div v-if="showSentenceList" class="sentence-dropdown fixed inset-0 bg-black/20 z-[200] flex items-start justify-center pt-[60px]" @click.self="showSentenceList=false">
-      <div class="sentence-dropdown-content bg-[var(--tw-bg-card)] rounded-xl shadow-2xl max-h-[70vh] overflow-y-auto w-[90%] max-w-[500px] p-2">
+      <div class="sentence-dropdown-content bg-[var(--tw-bg-card)] rounded-xl shadow-2xl max-h-[70vh] overflow-y-auto w-[90%] max-w-[600px] p-2">
         <div v-for="(s,i) in sentences" :key="s.id" 
              :class="['sentence-dropdown-item', { current: i===currentIndex, familiar: familiarIds.has(s.id) }]"
              @click="jumpToSentence(i); showSentenceList=false">
@@ -35,7 +35,7 @@
 
     <!-- Auth Page -->
     <div v-if="!loggedIn" class="auth-page flex justify-center items-center min-h-[60vh]">
-      <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
+      <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
         <h2>PTE WFD Practice</h2>
         <div class="auth-tabs flex mb-4 rounded-lg overflow-hidden border border-[var(--tw-border)]">
           <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
@@ -45,7 +45,7 @@
         <input v-model="authPassword" type="password" placeholder="Password" class="auth-input w-full px-3 py-2.5 border border-[var(--tw-border)] rounded-lg text-sm mb-2.5 outline-none focus:border-primary" @keyup.enter="doLogin" />
         <div v-if="authError" class="auth-error text-danger text-xs mb-2.5">{{ authError }}</div>
         <!-- Verification form -->
-    <div v-if="needsVerify" class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
+    <div v-if="needsVerify" class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
       <h2>Verify Email</h2>
       <p class="verify-msg text-xs text-[var(--tw-text-muted)] mb-3" v-html="verifyMessage"></p>
       <div v-if="!verifyEmailSent && verifyDevCode" class="verify-dev-code bg-green-50 border border-green-200 rounded-lg p-3 mb-3 text-center">
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Login/Register form -->
-    <div v-if="!needsVerify" class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
+    <div v-if="!needsVerify" class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
         <button class="btn-auth w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed" @click="doLogin" :disabled="authLoading">
           {{ authLoading ? 'Loading...' : (authMode === 'register' ? 'Register' : 'Login') }}
         </button>
@@ -74,7 +74,7 @@
 
     <!-- Category Selector -->
     <div v-if="loggedIn && !started" class="auth-page flex justify-center items-center min-h-[60vh]">
-      <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[380px] shadow-md text-center">
+      <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
         <h2>Select Course</h2>
         <div class="cat-options flex gap-2 mb-1 flex-wrap" v-if="courses.length > 0">
           <button v-for="c in courses" :key="c.id" class="btn-cat flex-1 min-w-[60px] py-2.5 px-2 border-2 border-[var(--tw-border)] rounded-lg bg-[var(--tw-bg-card)] text-sm font-medium text-[var(--tw-text-muted)] hover:border-primary hover:text-primary transition-all cursor-pointer" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
@@ -107,12 +107,12 @@
         </div>
       </div>
 
-      <div class="sentence-area bg-[var(--tw-bg-card)] rounded-xl p-5 sm:p-7 shadow-sm mb-4">
+      <div class="sentence-area bg-[var(--tw-bg-card)] rounded-xl p-6 sm:p-8 shadow-sm mb-4">
         <div class="blanks-row flex flex-wrap items-end leading-[2.2]" ref="blanksContainer">
             <span
               v-for="(w, wi) in parsedWords"
               :key="wi"
-              class="word-slot inline-flex items-center justify-center min-w-[40px] h-[46px] text-[22px] font-semibold border-b-[1.5px] px-2.5 mx-[3px] cursor-pointer select-none transition-colors border-[var(--tw-border)]"
+              class="word-slot inline-flex items-center justify-center min-w-[40px] h-[52px] text-[24px] font-semibold border-b-[1.5px] px-3 mx-[4px] cursor-pointer select-none transition-colors border-[var(--tw-border)]"
               :class="{
                 filled: w.filled,
                 active: activeWordIndex === wi,
