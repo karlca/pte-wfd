@@ -10,7 +10,7 @@
         <span class="user-email">{{ userEmail }}</span>
         <button class="btn-logout" @click="doLogout" title="Logout">&times;</button>
       </span>
-      <span class="counter" @click="showSentenceList = !showSentenceList" style="cursor:pointer;position:relative">{{ currentIndex + 1 }} / {{ sentences.length }}</span>
+      <span class="counter" @click="showSentenceList = !showSentenceList" style="cursor:pointer;position:relative">{{ currentIndex + 1 }} / {{ sentences.length }} <span style="font-size:10px">&#9660;</span></span>
     </header>
     <!-- Sentence Dropdown -->
     <div v-if="showSentenceList" class="sentence-dropdown" @click.self="showSentenceList=false">
@@ -89,7 +89,7 @@
 
     <div class="main" v-if="started && currentSentence">
       <div class="audio-bar">
-        <button class="btn-familiar" @click="markFamiliar" title="Mark as familiar"> Familiar</button>
+        <button class="btn-familiar" @click="markFamiliar" title="Mark as familiar"> 已熟悉</button>
         <button class="btn-audio" @click="playAudio" :disabled="isPlaying" title="播放语音">
           <span v-if="isPlaying">▶▶</span>
           <span v-else>▶</span>
