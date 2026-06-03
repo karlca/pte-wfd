@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="tech">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Admin - PTE WFD v4</title>
@@ -41,6 +41,7 @@
   .detail-table th { @apply bg-gray-100 text-[11px] px-2.5 py-1.5; }
   .detail-table td { @apply px-2.5 py-1.5; }
 </style>
+<script>(function(){var t=localStorage.getItem("pte_theme")||"tech";document.documentElement.setAttribute("data-theme",t);})();</script>
 </head>
 <body>
 <div id="app">
@@ -59,7 +60,13 @@
         <button :class="{active:tab==='courses'}" @click="tab='courses'">Courses</button>
         <button :class="{active:tab==='users'}" @click="tab='users';loadUsers()">Users</button>
       </div>
-      <button class="btn" @click="doLogout">Logout</button>
+      <select onchange="var t=this.value;localStorage.setItem('pte_theme',t);document.documentElement.setAttribute('data-theme',t);" class="theme-select" style="padding:4px 8px;border:1px solid var(--tw-border);border-radius:6px;font-size:12px;color:var(--tw-text-muted);background:var(--tw-bg-card);outline:none">
+            <option value="tech">Tech</option>
+            <option value="ocean">Ocean</option>
+            <option value="forest">Forest</option>
+            <option value="dark">Dark</option>
+          </select>
+          <button class="btn" @click="doLogout">Logout</button>
     </div>
 
     <!-- USERS TAB -->
