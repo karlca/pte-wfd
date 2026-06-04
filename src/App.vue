@@ -356,7 +356,9 @@ function startPractice(list) {
 
 onMounted(() => {
   if (isLoggedIn()) {
-    // no default sentences, user selects course
+    fetchCourses();
+    checkSavedState(false);
+    fetchUserStats();
   }
   // Fireworks triggered inline on completion
   function loadVoices() {
