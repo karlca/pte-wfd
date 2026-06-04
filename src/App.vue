@@ -72,22 +72,63 @@
     </div>
     </div>
 
-    <!-- Category Selector / Resume -->
-    <div v-if="loggedIn && !started" class="auth-page flex justify-center items-center min-h-[60vh]">
-      <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
-        <!-- Saved progress resume card -->
-        <div v-if="hasSavedState" style="margin-bottom:20px;background:var(--tw-surface);border-radius:10px;padding:16px;text-align:left">
-          <div style="font-size:13px;font-weight:600;color:var(--tw-text-main);margin-bottom:6px">Continue where you left off</div>
-          <div style="font-size:12px;color:var(--tw-text-muted);margin-bottom:4px">Course: <strong>{{ getSavedCourseName(savedStateData?.courseId) }}</strong></div>
-          <div style="font-size:12px;color:var(--tw-text-muted);margin-bottom:12px">Progress: <strong>{{ (savedStateData?.currentIndex || 0) + 1 }} / {{ (savedStateData?.sentenceIds?.length || savedStateData?.sentences?.length || 0) || 0 }}</strong></div>
-          <button class="btn-cat flex-1 min-w-[60px] py-2.5 px-4 border-2 border-primary rounded-lg text-sm font-semibold text-white bg-primary hover:opacity-90 transition-all cursor-pointer w-full" @click="resumePractice">Continue</button>
-        </div>
+    <!-- Dashboard -->
+    <div v-if="loggedIn && !started" class="dashboard w-full max-w-5xl mx-auto px-6 py-8">
+      <!-- Welcome -->
+      <div style="margin-bottom:28px">
+        <h2 style="font-size:26px;font-weight:700;color:var(--tw-text-main);margin:0 0 4px">Welcome back</h2>
+        <span style="font-size:14px;color:var(--tw-text-muted)">{{ userEmail }}</span>
+      </div>
 
-        <h2 style="font-size:16px;font-weight:600;color:var(--tw-text-muted);margin-bottom:12px">{{ hasSavedState ? 'Or select a different course' : 'Select Course' }}</h2>
-        <div class="cat-options flex gap-2 mb-1 flex-wrap" v-if="courses.length > 0">
-          <button v-for="c in courses" :key="c.id" class="btn-cat flex-1 min-w-[60px] py-2.5 px-2 border-2 border-[var(--tw-border)] rounded-lg bg-[var(--tw-bg-card)] text-sm font-medium text-[var(--tw-text-muted)] hover:border-primary hover:text-primary transition-all cursor-pointer" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
+      <!-- Stats Row -->
+      <div class="stats-row-dash" style="display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap">
+        <div class="stat-card-dash" style="flex:1;min-width:130px;background:var(--tw-bg-card);padding:16px 20px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center">
+          <div style="font-size:24px;font-weight:700;color:var(--tw-primary)">{{ formatTime(userStats.totalTimeSeconds || 0) }}</div>
+          <div style="font-size:11px;color:var(--tw-text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em">Practice Time</div>
         </div>
-        <div v-else style="color:var(--tw-text-muted);font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }}</div>
+        <div class="stat-card-dash" style="flex:1;min-width:130px;background:var(--tw-bg-card);padding:16px 20px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center">
+          <div style="font-size:24px;font-weight:700;color:var(--tw-primary)">{{ userStats.totalSessions || 0 }}</div>
+          <div style="font-size:11px;color:var(--tw-text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em">Sessions</div>
+        </div>
+        <div class="stat-card-dash" style="flex:1;min-width:130px;background:var(--tw-bg-card);padding:16px 20px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center">
+          <div style="font-size:24px;font-weight:700;color:var(--tw-danger)">{{ userStats.wrongSentencesCount || 0 }}</div>
+          <div style="font-size:11px;color:var(--tw-text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em">Wrong</div>
+        </div>
+      </div>
+
+      <!-- Resume Card -->
+      <div v-if="hasSavedState" style="background:linear-gradient(135deg, var(--tw-primary), var(--tw-primary-dark));border-radius:14px;padding:22px 24px;margin-bottom:28px;color:#fff;box-shadow:0 4px 20px rgba(79,70,229,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:12px;opacity:.8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Continue Learning</div>
+            <div style="font-size:18px;font-weight:700">{{ getSavedCourseName(savedStateData?.courseId) }}</div>
+            <div style="font-size:13px;opacity:.85;margin-top:6px">
+              Progress: <strong>{{ (savedStateData?.currentIndex || 0) + 1 }}</strong> / <strong>{{ (savedStateData?.sentenceIds?.length || savedStateData?.sentences?.length || 0) }}</strong> sentences
+            </div>
+          </div>
+          <button @click="resumePractice" style="padding:10px 28px;background:#fff;color:var(--tw-primary);border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.15)">Continue</button>
+        </div>
+      </div>
+
+      <!-- Courses Section -->
+      <h2 style="font-size:18px;font-weight:700;color:var(--tw-text-main);margin:0 0 16px">{{ hasSavedState ? 'All Courses' : 'Choose a Course' }}</h2>
+      
+      <div v-if="courses.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+        <div v-for="c in courses" :key="c.id" @click="startWithCourse(c.id)" 
+             :class="{active:selectedCourseId === c.id}"
+             style="background:var(--tw-bg-card);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.06);cursor:pointer;transition:all .2s;border:2px solid transparent"
+             onmouseover="this.style.borderColor='var(--tw-primary)';this.style.boxShadow='0 4px 24px rgba(79,70,229,.12)'" 
+             onmouseout="this.style.borderColor='transparent';this.style.boxShadow='0 2px 12px rgba(0,0,0,.06)'">
+          <div style="font-size:18px;font-weight:700;color:var(--tw-text-main);margin-bottom:6px">{{ c.name }}</div>
+          <div style="font-size:13px;color:var(--tw-text-muted);margin-bottom:12px;line-height:1.5">{{ c.description || 'A collection of WFD practice sentences to help you prepare for the PTE exam.' }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:15px;font-weight:700;color:var(--tw-primary)">{{ c.price > 0 ? '$' + c.price : 'Free' }}</span>
+            <span style="font-size:12px;color:var(--tw-text-muted);background:var(--tw-surface);padding:4px 10px;border-radius:20px">{{ c.sentence_count || '?' }} sentences</span>
+          </div>
+        </div>
+      </div>
+      <div v-else style="color:var(--tw-text-muted);font-size:14px;text-align:center;padding:40px 0">
+        {{ loadingSentences ? 'Loading courses...' : 'No courses available' }}
       </div>
     </div>
 
@@ -204,7 +245,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from "vue";
-import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState, getCourses, getCourseSentences } from "./api.js";
+import { isLoggedIn, getUserEmail, logout as apiLogout, login, register, savePracticeSession, getWrongSentences, savePracticeState, loadPracticeState, getCourses, getCourseSentences, getStats } from "./api.js";
 
 const sentences = ref([]);
 const currentIndex = ref(0);
@@ -243,6 +284,7 @@ const selectedCourseId = ref(null);
 const courses = ref([]);
 const loadingSentences = ref(false);
 const visitCount = ref(0);
+const userStats = ref({ totalTimeSeconds: 0, totalSessions: 0, wrongSentencesCount: 0 });
 const familiarIds = ref(new Set());
 const showSentenceList = ref(false); // "all"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
@@ -267,6 +309,13 @@ async function fetchCourses() {
     console.log('[PTE] fetchCourses got', list.length, 'courses:', list.map(c => c.name));
     courses.value = list;
   } catch(e) { console.error('[PTE] Failed to load courses:', e); }
+}
+
+async function fetchUserStats() {
+  try {
+    const stats = await getStats();
+    userStats.value = stats;
+  } catch(e) { console.error('[PTE] Failed to load stats:', e); }
 }
 
 async function startWithCourse(courseId) {
@@ -750,6 +799,7 @@ async function doLogin() {
     userEmail.value = data.email;
     fetchCourses();
     checkSavedState(false);
+    fetchUserStats();
   } catch (e) {
     authError.value = e.message;
   } finally {

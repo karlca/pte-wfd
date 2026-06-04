@@ -50,8 +50,10 @@ module.exports = {
   },
   // Course management
   async listCourses() {
-    if (usePg) { const r = await pool.query("SELECT * FROM courses ORDER BY id"); return r.rows; }
-    return (readJson().courses || []).sort((a,b) => a.id - b.id);
+    if (usePg) { const r = await pool.query("SELECT c.*, COALESCE((SELECT COUNT(*) FROM db_sentences WHERE course_id = c.id),0)::int as sentence_count FROM courses c ORDER BY c.id"); return r.rows; }
+    const courses = (readJson().courses || []).sort((a,b) => a.id - b.id);
+    const sentences = readJson().sentences || readJson().db_sentences || [];
+    return courses.map(c => ({ ...c, sentence_count: sentences.filter(s => s.course_id == c.id).length }));
   },
   async createCourse(course) {
     if (usePg) { const r = await pool.query("INSERT INTO courses (name, description, price) VALUES ($1,$2,$3) RETURNING *", [course.name, course.description || '', course.price || 0]); return r.rows[0]; }
