@@ -106,7 +106,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;opacity:.8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Continue Learning</div>
-            <div style="font-size:18px;font-weight:700">{{ getSavedCourseName(savedStateData?.courseId) }}</div>
+            <div style="font-size:18px;font-weight:700">{{ getSavedCourseName(savedStateData?.category) }}</div>
             <div style="font-size:13px;opacity:.85;margin-top:6px">
               Progress: <strong>{{ (savedStateData?.currentIndex || 0) + 1 }}</strong> / <strong>{{ (savedStateData?.sentenceIds?.length || savedStateData?.sentences?.length || 0) }}</strong> sentences
             </div>
