@@ -43,8 +43,8 @@
       <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
         <h2>PTE WFD Practice</h2>
         <div class="auth-tabs flex mb-4 rounded-lg overflow-hidden border border-[var(--tw-border)]">
-          <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
-          <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+          <button class="flex-1 py-2.5 text-sm font-medium transition-all" :class="authMode === 'login' ? 'bg-primary text-white' : 'bg-[var(--tw-surface)] text-[var(--tw-text-muted)]'" @click="authMode = 'login'">Login</button>
+          <button class="flex-1 py-2.5 text-sm font-medium transition-all" :class="authMode === 'register' ? 'bg-primary text-white' : 'bg-[var(--tw-surface)] text-[var(--tw-text-muted)]'" @click="authMode = 'register'">Register</button>
         </div>
         <input v-model="authEmail" type="email" placeholder="Email" class="auth-input w-full px-3 py-2.5 border border-[var(--tw-border)] rounded-lg text-sm mb-2.5 outline-none focus:border-primary" @keyup.enter="doLogin" />
         <input v-model="authPassword" type="password" placeholder="Password" class="auth-input w-full px-3 py-2.5 border border-[var(--tw-border)] rounded-lg text-sm mb-2.5 outline-none focus:border-primary" @keyup.enter="doLogin" />
