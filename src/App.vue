@@ -290,19 +290,11 @@ function startPractice(list) {
   saveCurrentState();
 }
 
-let completionTriggered = false;
 onMounted(() => {
   if (isLoggedIn()) {
     // no default sentences, user selects course
   }
-  // Trigger fireworks on completion
-  watch(currentSentence, (val) => {
-    if (!val && started.value && sentences.value.length > 0 && !completionTriggered) {
-      completionTriggered = true;
-      nextTick(() => { setTimeout(() => startFireworks(), 300); });
-    }
-    if (val) { completionTriggered = false; }
-  });
+  // Fireworks triggered inline on completion
   function loadVoices() {
     const voices = speechSynthesis.getVoices();
     if (voices.length > 0) {
@@ -365,16 +357,21 @@ const allFilled = computed(() => totalWords.value > 0 && filledCount.value === t
 
 watch(allFilled, (val) => {
   console.log('[PTE] allFilled:', val, 'filled:', filledCount.value, 'total:', totalWords.value, 'auto:', autoAdvance.value);
-  if (val && autoAdvance.value) {
+  if (!val) return;
+  const isLast = currentIndex.value >= sentences.value.length - 1;
+  if (isLast) {
+    // Course complete - always finish, regardless of autoAdvance
     setTimeout(() => {
-      if (currentIndex.value < sentences.value.length - 1) {
-        nextSentence();
-      } else {
-        checkCurrentSentence();
-        finishSession();
-        currentIndex.value = sentences.value.length;
-        clearState();
-      }
+      checkCurrentSentence();
+      finishSession();
+      currentIndex.value = sentences.value.length;
+      clearState();
+      nextTick(() => { setTimeout(() => startFireworks(), 300); });
+    }, 600);
+  } else if (autoAdvance.value) {
+    // Normal auto-advance to next sentence
+    setTimeout(() => {
+      nextSentence();
     }, 800);
   }
 });
@@ -474,6 +471,12 @@ function nextSentence() {
     nextTick(() => focusFirstEmpty());
     saveCurrentState();
     setTimeout(() => playAudio(), 400);
+  } else if (allFilled.value) {
+    // Last sentence completed via manual advance (space/button)
+    finishSession();
+    currentIndex.value = sentences.value.length;
+    clearState();
+    nextTick(() => { setTimeout(() => startFireworks(), 300); });
   }
 }
 
