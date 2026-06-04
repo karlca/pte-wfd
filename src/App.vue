@@ -521,7 +521,7 @@ async function switchMode(mode) {
   }
 }
 
-function fmtTime(s) { if (!s) return "0:00"; const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); }
+function formatTime(s) { if (!s) return "0:00"; const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); }
 
 function saveCurrentState() {
   if (!loggedIn.value || !started.value || sentences.value.length === 0) return;
