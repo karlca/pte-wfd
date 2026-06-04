@@ -148,6 +148,16 @@
       <div v-if="encouragementVisible" class="encouragement-toast fixed top-20 left-1/2 -translate-x-1/2 bg-primary text-white px-7 py-3 rounded-3xl text-base font-semibold z-[99] shadow-lg">{{ encouragementMsg }}</div>
     </transition>
 
+    <div v-if="isPaused" class="pause-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+      <div style="background:var(--tw-bg-card);border-radius:16px;padding:36px 44px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);max-width:380px;width:90%">
+        <div style="font-size:42px;margin-bottom:12px">&#9208;</div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--tw-text-main);margin:0 0 6px">Learning Paused</h2>
+        <p style="font-size:13px;color:var(--tw-text-muted);margin:0 0 8px">You switched away from the page</p>
+        <p style="font-size:12px;color:var(--tw-text-muted);margin:0 0 24px;background:var(--tw-surface);padding:8px 12px;border-radius:8px;display:inline-block">Timer paused at {{ formatTime(elapsedSeconds) }}</p>
+        <button @click="resumeLearning" style="width:100%;padding:12px 24px;background:var(--tw-primary);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s">Continue Learning</button>
+      </div>
+    </div>
+
     <div class="main" v-if="started && currentSentence">
       <div class="flex items-center gap-3 mb-5">
         <button class="btn-familiar inline-flex items-center gap-1 px-4 py-2.5 border border-[var(--tw-border)] rounded-lg text-sm text-[var(--tw-text-muted)] font-medium hover:bg-green-50 hover:text-green-700 hover:border-green-700 transition-all" @click="markFamiliar" title="Mark as familiar"> 已熟悉</button>
@@ -283,6 +293,9 @@ const verifyMessage = ref("");
 const sessionStart = ref(0);
 const elapsedSeconds = ref(0);
 let timerInterval = null;
+const isPaused = ref(false);
+let pausedTime = null;
+let pauseStart = null;
 const wrongSentencesSet = ref(new Set());
 const practiceMode = ref("all");
 const selectedCourseId = ref(null);
@@ -372,6 +385,18 @@ onMounted(() => {
     loadVoices();
     getBestVoice();
   };
+
+  // Pause on tab switch or window blur
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && started.value && currentSentence.value) {
+      pauseLearning();
+    }
+  });
+  window.addEventListener("blur", () => {
+    if (started.value && currentSentence.value && !document.hidden) {
+      pauseLearning();
+    }
+  });
 });
 
 function shuffleArray(arr) {
@@ -878,6 +903,30 @@ function getSavedCourseName(courseId) {
 
 function onVoiceChange() {
   localStorage.setItem("pte_voice", selectedVoiceName.value);
+}
+
+function pauseLearning() {
+  if (isPaused.value) return;
+  isPaused.value = true;
+  pauseStart = Date.now();
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  pausedTime = elapsedSeconds.value;
+}
+
+function resumeLearning() {
+  isPaused.value = false;
+  const pausedDuration = pauseStart ? Math.floor((Date.now() - pauseStart) / 1000) : 0;
+  sessionStart.value = sessionStart.value + pausedDuration * 1000;
+  timerInterval = setInterval(() => {
+    elapsedSeconds.value = Math.floor((Date.now() - sessionStart.value) / 1000);
+  }, 1000);
+  nextTick(() => {
+    if (parsedWords.value.length > 0 && activeWordIndex.value < 0) focusFirstEmpty();
+    hiddenInput.value?.focus();
+  });
 }
 
 async function trackVisit() {
