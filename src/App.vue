@@ -1,7 +1,12 @@
 <template>
   <div class="app max-w-5xl mx-auto px-6 py-8 min-h-screen bg-[var(--tw-bg-main)] text-[var(--tw-text-main)]">
     <header class="header flex items-center justify-between pb-5 border-b border-[var(--tw-border)] mb-6">
+      <div class="flex items-center gap-3">
+        <button v-if="started" @click="goBack" class="flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--tw-border)] bg-[var(--tw-bg-card)] text-[var(--tw-text-muted)] hover:text-[var(--tw-primary)] hover:border-[var(--tw-primary)] transition-all cursor-pointer" title="Back to courses">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
       <h1 class="text-2xl font-bold">PTE WFD 练习 <span style="font-size:10px;color:#aaa;font-weight:400">v250601</span></h1>
+      </div>
       <select v-model="currentTheme" @change="onThemeChange"
           class="px-2 py-1 border border-[var(--tw-border)] rounded-md text-xs text-[var(--tw-text-muted)] bg-[var(--tw-bg-card)] max-w-[90px] outline-none focus:border-primary">
           <option value="tech">Tech</option>
@@ -735,6 +740,20 @@ function shareResults() {
       setTimeout(() => { encouragementVisible.value = false; }, 2000);
     });
   }
+}
+
+function goBack() {
+  if (timerInterval) clearInterval(timerInterval);
+  saveCurrentState();
+  finishSession();
+  started.value = false;
+  sentences.value = [];
+  currentIndex.value = 0;
+  userInput.value = {};
+  selectedCourseId.value = null;
+  hasSavedState.value = false;
+  savedStateData.value = null;
+  checkSavedState(false);
 }
 
 function backToCourses() {
