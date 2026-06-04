@@ -72,15 +72,23 @@
     </div>
     </div>
 
-    <!-- Category Selector -->
+    <!-- Category Selector / Resume -->
     <div v-if="loggedIn && !started" class="auth-page flex justify-center items-center min-h-[60vh]">
       <div class="auth-card bg-[var(--tw-bg-card)] rounded-xl p-8 w-full max-w-[420px] shadow-md text-center">
-        <h2>Select Course</h2>
+        <!-- Saved progress resume card -->
+        <div v-if="hasSavedState" style="margin-bottom:20px;background:var(--tw-surface);border-radius:10px;padding:16px;text-align:left">
+          <div style="font-size:13px;font-weight:600;color:var(--tw-text-main);margin-bottom:6px">Continue where you left off</div>
+          <div style="font-size:12px;color:var(--tw-text-muted);margin-bottom:4px">Course: <strong>{{ getSavedCourseName(savedStateData?.courseId) }}</strong></div>
+          <div style="font-size:12px;color:var(--tw-text-muted);margin-bottom:12px">Progress: <strong>{{ (savedStateData?.currentIndex || 0) + 1 }} / {{ (savedStateData?.sentenceIds?.length || savedStateData?.sentences?.length || 0) || 0 }}</strong></div>
+          <button class="btn-cat flex-1 min-w-[60px] py-2.5 px-4 border-2 border-primary rounded-lg text-sm font-semibold text-white bg-primary hover:opacity-90 transition-all cursor-pointer w-full" @click="resumePractice">Continue</button>
+        </div>
+
+        <h2 style="font-size:16px;font-weight:600;color:var(--tw-text-muted);margin-bottom:12px">{{ hasSavedState ? 'Or select a different course' : 'Select Course' }}</h2>
         <div class="cat-options flex gap-2 mb-1 flex-wrap" v-if="courses.length > 0">
           <button v-for="c in courses" :key="c.id" class="btn-cat flex-1 min-w-[60px] py-2.5 px-2 border-2 border-[var(--tw-border)] rounded-lg bg-[var(--tw-bg-card)] text-sm font-medium text-[var(--tw-text-muted)] hover:border-primary hover:text-primary transition-all cursor-pointer" :class="{ active: selectedCourseId === c.id }" @click="startWithCourse(c.id)">{{ c.name }}</button>
         </div>
-        <div v-else style="color:#888;font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }} (courses.value.length = {{ courses.length }})</div>
-        <button v-if="hasSavedState" class="btn-auth w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed" style="margin-top:12px;background:#1a73e8" @click="resumePractice">Continue</button></div>
+        <div v-else style="color:var(--tw-text-muted);font-size:14px;margin-bottom:12px">{{ loadingSentences ? 'Loading...' : 'No courses available' }}</div>
+      </div>
     </div>
 
     <!-- Celebration Overlay -->
@@ -262,6 +270,8 @@ async function fetchCourses() {
 }
 
 async function startWithCourse(courseId) {
+  hasSavedState.value = false;
+  savedStateData.value = null;
   selectedCourseId.value = courseId;
   loadingSentences.value = true;
   try {
@@ -686,8 +696,11 @@ function backToCourses() {
   currentIndex.value = 0;
   userInput.value = {};
   selectedCourseId.value = null;
+  hasSavedState.value = false;
+  savedStateData.value = null;
   courseSentences.value = [];
   clearState();
+  checkSavedState(false);
 }
 
 function restart() {
@@ -736,6 +749,7 @@ async function doLogin() {
     loggedIn.value = true;
     userEmail.value = data.email;
     fetchCourses();
+    checkSavedState(false);
   } catch (e) {
     authError.value = e.message;
   } finally {
@@ -750,6 +764,7 @@ async function doVerify() {
     loggedIn.value = true;
     userEmail.value = data.email;
     needsVerify.value = false;
+    fetchCourses();
     checkSavedState(true);
   } catch (e) {
     authError.value = e.message;
@@ -782,6 +797,12 @@ function doLogout() {
 function onThemeChange() {
   localStorage.setItem("pte_theme", currentTheme.value);
   document.documentElement.setAttribute("data-theme", currentTheme.value);
+}
+
+function getSavedCourseName(courseId) {
+  if (!courseId) return 'Unknown';
+  const c = courses.value.find(x => x.id == courseId);
+  return c ? c.name : 'Course #' + courseId;
 }
 
 function onVoiceChange() {
