@@ -171,6 +171,7 @@
     </div>
 
         <div v-if="started && !currentSentence" class="completion text-center py-16 px-5">
+      <canvas ref="fireworksCanvas" class="fireworks-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50"></canvas>
       <div v-if="savingSession" style="font-size:14px;color:#666;margin-bottom:12px;">Saving...</div>
       <div class="completion-icon text-7xl mb-4">🎉</div>
       <h2>练习完成!</h2>
@@ -183,6 +184,7 @@
       <p class="encourage-text text-base text-[var(--tw-text-muted)] mb-4 italic">{{ completionMessage }}</p>
       <div class="comp-buttons flex gap-2.5 justify-center">
         <button class="btn-nav btn-share" @click="shareResults">Share</button>
+        <button class="btn-nav px-5 py-2.5 bg-[var(--tw-primary)] text-white border-[var(--tw-primary)] rounded-lg text-sm font-medium hover:opacity-90 transition-all" @click="backToCourses">返回课程</button>
         <button class="btn-nav px-5 py-2.5 bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] border border-[var(--tw-border)] rounded-lg text-sm font-medium hover:bg-[var(--tw-bg-main)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" @click="restart">再来一次</button>
       </div>
     </div>
@@ -237,6 +239,7 @@ const familiarIds = ref(new Set());
 const showSentenceList = ref(false); // "all"  // "all" | "wrong"
 const wrongSentencesList = ref([]);
 const savingSession = ref(false);
+const courseSentences = ref([]);
 const hasSavedState = ref(false);
 const savedStateData = ref(null);
 const perfectCount = ref(0);
@@ -247,6 +250,8 @@ const encouragementVisible = ref(false);
 const sessionAccuracy = ref(0);
 const hiddenInput = ref(null);
 const blanksContainer = ref(null);
+const fireworksCanvas = ref(null);
+let fireworksRunning = false;
 
 async function fetchCourses() {
   try {
@@ -285,10 +290,19 @@ function startPractice(list) {
   saveCurrentState();
 }
 
+let completionTriggered = false;
 onMounted(() => {
   if (isLoggedIn()) {
     // no default sentences, user selects course
   }
+  // Trigger fireworks on completion
+  watch(currentSentence, (val) => {
+    if (!val && started.value && sentences.value.length > 0 && !completionTriggered) {
+      completionTriggered = true;
+      nextTick(() => { setTimeout(() => startFireworks(), 300); });
+    }
+    if (val) { completionTriggered = false; }
+  });
   function loadVoices() {
     const voices = speechSynthesis.getVoices();
     if (voices.length > 0) {
@@ -566,6 +580,73 @@ function resumePractice() {
   setTimeout(() => saveCurrentState(), 300);
 }
 
+async function startFireworks() {
+  if (fireworksRunning) return;
+  fireworksRunning = true;
+  const canvas = fireworksCanvas.value;
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext("2d");
+  const particles = [];
+  const colors = ["#FF6B6B","#FFD93D","#6BCB77","#4D96FF","#FF6FB7","#A66CFF","#00D2FF"];
+
+  function createBurst(x, y) {
+    const count = 40 + Math.random() * 30;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 6;
+      particles.push({
+        x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 1, decay: 0.008 + Math.random() * 0.02,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 2 + Math.random() * 3,
+      });
+    }
+  }
+
+  function draw() {
+    if (!fireworksRunning) return;
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.04;
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (fireworksRunning) requestAnimationFrame(draw);
+  }
+
+  draw();
+  // Launch bursts
+  let burstCount = 0;
+  const maxBursts = 8;
+  function launchBurst() {
+    if (!fireworksRunning || burstCount >= maxBursts) return;
+    createBurst(Math.random() * canvas.width, Math.random() * canvas.height * 0.6);
+    burstCount++;
+    setTimeout(launchBurst, 400 + Math.random() * 600);
+  }
+  launchBurst();
+  // Stop after a while
+  setTimeout(() => { stopFireworks(); }, 5000);
+}
+
+function stopFireworks() {
+  fireworksRunning = false;
+}
+
 async function finishSession() {
   if (savingSession.value) return;
   savingSession.value = true;
@@ -594,7 +675,20 @@ function shareResults() {
   }
 }
 
+function backToCourses() {
+  stopFireworks();
+  if (timerInterval) clearInterval(timerInterval);
+  started.value = false;
+  sentences.value = [];
+  currentIndex.value = 0;
+  userInput.value = {};
+  selectedCourseId.value = null;
+  courseSentences.value = [];
+  clearState();
+}
+
 function restart() {
+  stopFireworks();
   checkCurrentSentence();
   finishSession();
   wrongSentencesSet.value = new Set();
